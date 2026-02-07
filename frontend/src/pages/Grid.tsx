@@ -18,25 +18,7 @@ export default function Grid() {
     <div className="h-full w-full flex overflow-hidden bg-black">
       {/* Sidebar */}
       <div className="w-80 flex-shrink-0 h-full flex flex-col border-r border-zinc-800 bg-zinc-950">
-        <div className="p-6 border-b border-zinc-800">
-          <h2 className="text-xl font-bold mb-4">Location Settings</h2>
-          <div className="space-y-4">
-            <div>
-              <label className="flex justify-between text-sm text-zinc-400 mb-2">
-                <span>Search Radius</span>
-                <span className="text-white font-mono">{radius} km</span>
-              </label>
-              <input
-                type="range"
-                min="1"
-                max="50"
-                value={radius}
-                onChange={(e) => setRadius(Number(e.target.value))}
-                className="w-full slider h-2 bg-zinc-800 rounded-lg appearance-none cursor-pointer"
-              />
-            </div>
-          </div>
-        </div>
+        
         <EventSettings events={events} onFilterChange={setFilteredEvents} />
       </div>
 
