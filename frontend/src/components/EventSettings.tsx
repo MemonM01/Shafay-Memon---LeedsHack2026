@@ -91,6 +91,11 @@ export default function EventSettings({ events, onFilterChange }: EventSettingsP
         };
     }, [locationWrapperRef]);
 
+    // Get current location on mount
+    useEffect(() => {
+        handleUseCurrentLocation();
+    }, []);
+
     const handleTagToggle = (tag: string) => {
         setSelectedTags(prev =>
             prev.includes(tag)
@@ -260,12 +265,11 @@ export default function EventSettings({ events, onFilterChange }: EventSettingsP
         setTagInput('');
         setStartDate('');
         setEndDate('');
-        setLocationAddress('');
-        setLocationCoords(null);
         setMileRange(25);
-        setIsLoadingLocation(false);
         setSuggestions([]);
         setShowSuggestions(false);
+        // Reset to current location
+        handleUseCurrentLocation();
     };
 
     return (

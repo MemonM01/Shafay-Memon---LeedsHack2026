@@ -1,41 +1,42 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import EventCard from "../components/EventCard";
 import EventSettings from "../components/EventSettings";
+import { useEvents } from "../context/EventsContext";
 import type { Event } from "../types/Events";
 
-const events: Event[] = [
-  {
-    id: "1",
-    title: "Sample Event 1",
-    description: "A short description for event 1.",
-    location: "Leeds Town Hall",
-    date: "2026-01-15",
-    time: "18:00",
-    image: "https://images.unsplash.com/photo-1503428593586-e225b39bddfe?auto=format&fit=crop&w=1200&q=80",
-    position: [53.8013, -1.5486],
-    tags: ["Music", "Concert", "Live"],
-  },
-  {
-    id: "2",
-    title: "Sample Event 2",
-    description: "A short description for event 2.",
-    location: "Hyde Park",
-    date: "2026-02-03",
-    time: "14:00",
-    image: "",
-    position: [53.8008, -1.5491],
-    tags: ["Outdoor", "Social"],
-  },
-  // add more events or fetch them from your API
-];
+export default function Grid() {
+  // Consume context instead of static events
+  const { events, loading, radius, setRadius } = useEvents();
+  const [filteredEvents, setFilteredEvents] = useState<Event[]>(events);
 
-export default function Grid(){
-    const [filteredEvents, setFilteredEvents] = useState<Event[]>(events);
+  // Sync filtered events when context events change
+  useEffect(() => {
+    setFilteredEvents(events);
+  }, [events]);
 
-    return(
+  return (
     <div className="h-full w-full flex overflow-hidden bg-black">
       {/* Sidebar */}
-      <div className="w-80 flex-shrink-0 h-full">
+      <div className="w-80 flex-shrink-0 h-full flex flex-col border-r border-zinc-800 bg-zinc-950">
+        <div className="p-6 border-b border-zinc-800">
+          <h2 className="text-xl font-bold mb-4">Location Settings</h2>
+          <div className="space-y-4">
+            <div>
+              <label className="flex justify-between text-sm text-zinc-400 mb-2">
+                <span>Search Radius</span>
+                <span className="text-white font-mono">{radius} km</span>
+              </label>
+              <input
+                type="range"
+                min="1"
+                max="50"
+                value={radius}
+                onChange={(e) => setRadius(Number(e.target.value))}
+                className="w-full slider h-2 bg-zinc-800 rounded-lg appearance-none cursor-pointer"
+              />
+            </div>
+          </div>
+        </div>
         <EventSettings events={events} onFilterChange={setFilteredEvents} />
       </div>
 
@@ -43,20 +44,28 @@ export default function Grid(){
       <div className="flex-1 overflow-y-auto">
         <div className="px-4 py-8">
           <div className="max-w-[1100px] mx-auto">
-            <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(300px,1fr))]">
-              {filteredEvents.map((item) => (
-                <EventCard key={item.id} event={item} />
-              ))}
-            </div>
-            {filteredEvents.length === 0 && (
-              <div className="text-center py-20 text-zinc-500">
-                <p className="text-lg">No events match your filters</p>
-                <p className="text-sm mt-2">Try adjusting your search criteria</p>
+            {loading ? (
+              <div className="flex items-center justify-center h-64 text-zinc-500">
+                Loading events nearby...
               </div>
+            ) : (
+              <>
+                <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(300px,1fr))]">
+                  {filteredEvents.map((item) => (
+                    <EventCard key={item.id} event={item} />
+                  ))}
+                </div>
+                {filteredEvents.length === 0 && (
+                  <div className="text-center py-20 text-zinc-500">
+                    <p className="text-lg">No events match your filters</p>
+                    <p className="text-sm mt-2">Try increasing the radius or adjusting search criteria</p>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
       </div>
     </div>
-    );
+  );
 }

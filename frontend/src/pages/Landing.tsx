@@ -8,22 +8,30 @@ import Modal from '../components/Modal';
 import CreateEventForm from '../components/CreateEventForm';
 import { useAuth } from '../context/Userauth';
 import { supabase } from '../lib/supabaseClient';
+import { useEvents } from '../context/EventsContext';
 
 const Landing = () => {
+    // Consume global events context
+    const { events: contextEvents, fetchEvents } = useEvents();
+
+    // We still use local useUserLocation for centering map initially, 
+    // but the context also tracks it for fetching.
     const userLocation = useUserLocation();
+
     const [activeEvent, setActiveEvent] = useState<Event | null>(null);
     const location = useLocation();
     const navigate = useNavigate();
     const { user } = useAuth();
-    const events: Event[] = [
 
-    ];
-
+    // Local UI state
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isSelectingLocation, setIsSelectingLocation] = useState(false);
-    const [pendingEventData, setPendingEventData] = useState<any>(null); // Store form data while selecting location
+    const [pendingEventData, setPendingEventData] = useState<any>(null);
     const [locationName, setLocationName] = useState<string>('');
-    const [localEvents, setLocalEvents] = useState<Event[]>(events); // Local state for events
+
+    // We update localEvents when contextEvents changes, or just use contextEvents directly.
+    // However, the original code had 'localEvents' state for optimistic updates.
+    // It's cleaner to rely on contextEvents now.
 
     const handleCreateEventClick = () => {
         setIsCreateModalOpen(true);
@@ -95,7 +103,7 @@ const Landing = () => {
 
             const timestamp = new Date(`${data.date}T${data.time}:00`).toISOString();
 
-            const { data: eventData, error: dbError } = await supabase
+            const { error: dbError } = await supabase
                 .from('events')
                 .insert([
                     {
@@ -108,24 +116,13 @@ const Landing = () => {
                         owner_id: user.id,
                         image_url: imageUrl,
                     }
-                ])
-                .select();
+                ]);
 
             if (dbError) throw dbError;
 
-            const newEvent: Event = {
-                id: eventData?.[0]?.id || Date.now().toString(),
-                title: data.title,
-                description: data.description,
-                date: data.date,
-                time: data.time,
-                location: data.location || 'Unknown Location',
-                position: data.position || [53.8008, -1.5491],
-                image: imageUrl || 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=800&q=80',
-                tags: data.tags
-            };
+            // Refresh events from context
+            fetchEvents();
 
-            setLocalEvents([...localEvents, newEvent]);
             setIsCreateModalOpen(false);
             setPendingEventData(null);
             setLocationName('');
@@ -152,13 +149,14 @@ const Landing = () => {
 
     // Default center if user location isn't available yet (Leeds)
     const center: [number, number] = userLocation ? [userLocation[0], userLocation[1]] : [53.8008, -1.5491];
+    
 
     return (
         <div className="flex h-full w-full bg-black overflow-hidden relative">
             {/* Sidebar - Desktop */}
             <div className="w-1/3 min-w-[400px] max-w-[500px] h-full z-30 relative shadow-2xl hidden md:block">
                 <Sidebar
-                    events={localEvents}
+                    events={contextEvents}
                     onEventClick={(event) => setActiveEvent(event)}
                 />
             </div>
@@ -167,7 +165,7 @@ const Landing = () => {
             <div className="flex-1 h-full relative z-10">
                 <Map
                     center={center}
-                    events={localEvents}
+                    events={contextEvents}
                     userLocation={userLocation ? [userLocation[0], userLocation[1]] : null}
                     activeEvent={activeEvent}
                     isSelectingLocation={isSelectingLocation}
@@ -176,7 +174,7 @@ const Landing = () => {
                 />
 
                 {/* Create Event Button */}
-                {!isSelectingLocation && (
+                {!isSelectingLocation && user && (
                     <button
                         onClick={handleCreateEventClick}
                         className="absolute bottom-24 right-6 z-1000 bg-white text-black p-4 rounded-full shadow-lg hover:scale-110 transition-transform duration-200 group"

@@ -13,6 +13,8 @@ import Profile from "./pages/Profile"
 
 import EventDetails from './pages/EventDetails';
 
+import { EventsProvider } from './context/EventsContext';
+
 function App() {
   const { user } = useAuth();
 
@@ -28,7 +30,7 @@ function App() {
             <Route path="/event" element={<Grid />} />
             <Route path="/about" element={<About />} />
             <Route path="/events/:id" element={<EventDetails />} />
-            <Route path="/my-events" element={<ProtectedRoute> <MyEvents /> </ProtectedRoute>}/>
+            <Route path="/my-events" element={<ProtectedRoute> <MyEvents /> </ProtectedRoute>} />
             <Route
               path="/"
               element={
@@ -38,6 +40,27 @@ function App() {
           </Routes>
         </div>
       </div>
+      <EventsProvider>
+        <div className="h-screen flex flex-col">
+          <Navbar />
+          <div className="flex-1 min-h-0">
+            <Routes>
+              <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
+              <Route path="/register" element={user ? <Navigate to="/" replace /> : <Register />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/event" element={<Grid />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/events/:id" element={<EventDetails />} />
+              <Route
+                path="/"
+                element={
+                  <Landing />
+                }
+              />
+            </Routes>
+          </div>
+        </div>
+      </EventsProvider>
     </Router>
   );
 }
