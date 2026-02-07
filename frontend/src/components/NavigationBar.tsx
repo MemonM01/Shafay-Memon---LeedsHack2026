@@ -25,6 +25,9 @@ export default function NavigationBar(){
                 <div className="flex items-center gap-3">
                 <button onClick={signOut} className="text-sky-200 text-sm md:text-base hover:text-white font-medium bg-transparent border-0 p-0 cursor-pointer">Sign Out</button>
                 <button onClick={handleCreateEventClick} className="inline-flex items-center gap-2 bg-sky-500 hover:bg-sky-600 text-white px-3 py-1.5 rounded-md text-sm font-semibold transition-shadow shadow-sm hover:shadow-md">Create</button>
+                <button onClick={() => navigate('/profile')} className="h-8 w-8 rounded-full bg-zinc-700 hover:bg-zinc-600 flex items-center justify-center border border-zinc-600 overflow-hidden transition cursor-pointer">
+                    <img src="https://via.placeholder.com/32" alt="Profile" className="h-full w-full object-cover" />
+                </button>
             </div>
         );
     }

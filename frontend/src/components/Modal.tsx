@@ -79,12 +79,12 @@ const Modal = ({
     if (!mounted) return null;
 
     const sizeClasses = {
-        xs: 'max-w-xs',
-        sm: 'max-w-sm',
-        md: 'max-w-md',
-        lg: 'max-w-lg',
-        xl: 'max-w-xl',
-        '2xl': 'max-w-2xl',
+        xs: 'w-fit max-w-xs',
+        sm: 'w-fit max-w-sm',
+        md: 'w-fit max-w-md',
+        lg: 'w-fit max-w-lg',
+        xl: 'w-fit max-w-xl',
+        '2xl': 'w-fit max-w-2xl',
         full: 'max-w-[calc(100%-2rem)] md:max-w-[calc(100%-4rem)] w-full h-[calc(100%-2rem)] md:h-[calc(100%-4rem)]',
     };
 
@@ -103,9 +103,9 @@ const Modal = ({
             />
 
             {/* Modal Card */}
-            <div
-                className={`
-          relative w-full ${sizeClasses[size]} 
+                        <div
+                                className={`
+                    relative ${sizeClasses[size]} 
           bg-zinc-900/90 border border-zinc-800/50 
           rounded-2xl shadow-[0_0_50px_-12px_rgba(0,0,0,0.5)] 
           flex flex-col overflow-hidden
