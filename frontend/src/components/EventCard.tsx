@@ -1,17 +1,22 @@
+import { Link } from 'react-router-dom';
 import type { Event } from '../types/Events';
 
 type EventCardProps = {
   event: Event;
+  onClick?: () => void;
 };
 
-export default function EventCard({ event }: EventCardProps) {
+export default function EventCard({ event, onClick }: EventCardProps) {
   const fallback = "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1200&q=80";
 
   return (
-    <div className="group relative w-full overflow-hidden rounded-2xl bg-zinc-950 border border-zinc-800 shadow-2xl transition-all duration-300 hover:shadow-zinc-900/50 hover:border-zinc-700">
+    <div
+      onClick={onClick}
+      className="group relative w-full overflow-hidden rounded-2xl bg-zinc-950 border border-zinc-800 shadow-2xl transition-all duration-300 hover:shadow-zinc-900/50 hover:border-zinc-700 cursor-pointer"
+    >
       {/* Image Container */}
       <div className="relative h-48 w-full overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 to-transparent z-10 opacity-60" />
+        <div className="absolute inset-0 bg-linear-to-t from-zinc-950 to-transparent z-10 opacity-60" />
         <img
           src={event.image || fallback}
           alt={event.title}
@@ -64,9 +69,13 @@ export default function EventCard({ event }: EventCardProps) {
             <span className="text-xs font-semibold">{event.time}</span>
           </div>
 
-          <button className="rounded-lg bg-white px-4 py-2 text-xs font-bold uppercase tracking-wider text-black transition-all hover:bg-zinc-200 active:scale-95">
+          <Link
+            to={`/events/${event.id}`}
+            onClick={(e) => e.stopPropagation()}
+            className="rounded-lg bg-white px-4 py-2 text-xs font-bold uppercase tracking-wider text-black transition-all hover:bg-zinc-200 active:scale-95"
+          >
             Details
-          </button>
+          </Link>
         </div>
       </div>
     </div>
