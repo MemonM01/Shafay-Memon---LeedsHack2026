@@ -105,8 +105,8 @@ export default function MyEvents() {
 
       const goingEvents =
         (goingData as AttendeeRow[] | null)?.map((r) => r.events).filter(Boolean) as
-          | EventRow[]
-          | undefined;
+        | EventRow[]
+        | undefined;
 
       setGoing(goingEvents ?? []);
       setHosted((hostedData as EventRow[] | null) ?? []);
@@ -139,18 +139,16 @@ export default function MyEvents() {
         <div className="flex gap-2 rounded-xl bg-white/10 p-1">
           <button
             onClick={() => setTab("going")}
-            className={`px-3 py-1.5 rounded-lg text-sm ${
-              tab === "going" ? "bg-white text-black" : "text-white/80"
-            }`}
+            className={`px-3 py-1.5 rounded-lg text-sm cursor-pointer ${tab === "going" ? "bg-white text-black" : "text-white/80"
+              }`}
           >
             Going ({going.length})
           </button>
 
           <button
             onClick={() => setTab("hosted")}
-            className={`px-3 py-1.5 rounded-lg text-sm ${
-              tab === "hosted" ? "bg-white text-black" : "text-white/80"
-            }`}
+            className={`px-3 py-1.5 rounded-lg text-sm cursor-pointer ${tab === "hosted" ? "bg-white text-black" : "text-white/80"
+              }`}
           >
             Hosted ({hosted.length})
           </button>
@@ -169,7 +167,7 @@ export default function MyEvents() {
             return (
               <div key={appEvent.id} className="relative">
                 {tab === "hosted" && (
-                  <span className="absolute right-3 top-3 z-10 text-xs rounded-full bg-sky-500/20 px-2 py-1 text-sky-200">
+                  <span className="absolute right-3 top-3 z-10 text-xs rounded-full bg-sky-500/20 px-2 py-1 text-sky-200 ">
                     HOSTED BY YOU
                   </span>
                 )}

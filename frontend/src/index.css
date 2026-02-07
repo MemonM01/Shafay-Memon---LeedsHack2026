@@ -38,12 +38,39 @@ body {
 /* User Location Marker */
 .user-location-marker {
   position: relative;
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   background-color: #3b82f6;
   border: 3px solid white;
   border-radius: 50%;
-  box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.8);
+  z-index: 1000;
+}
+
+.user-location-marker::after {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background-color: rgba(59, 130, 246, 0.4);
+  border: 2px solid #3b82f6;
+  animation: user-pulse 2s infinite ease-out;
+  pointer-events: none;
+}
+
+@keyframes user-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+
+  100% {
+    transform: scale(3.5);
+    opacity: 0;
+  }
 }
 
 .pending-location-marker {

@@ -4,8 +4,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import LinkUpLogo from '../assets/LinkUpLogo.png';
 
 
-export default function NavigationBar(){
-    const {user, signOut} = useAuth();
+export default function NavigationBar() {
+    const { user, signOut, profile } = useAuth();
     const [open, setOpen] = useState(false);
 
     const navigate = useNavigate();
@@ -18,10 +18,14 @@ export default function NavigationBar(){
         }
 
         return (
-                <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3">
                 <button onClick={signOut} className="text-zinc-300 text-sm uppercase tracking-wide hover:text-white transition">Sign Out</button>
                 <button onClick={() => navigate('/profile')} className="h-8 w-8 rounded-full bg-zinc-700 hover:bg-zinc-600 flex items-center justify-center border border-zinc-600 overflow-hidden transition cursor-pointer">
-                    <img src="https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg" alt="Profile" className="h-full w-full object-cover" />
+                    <img
+                        src={profile?.profile_picture_url || "https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg"}
+                        alt="Profile"
+                        className="h-full w-full object-cover"
+                    />
                 </button>
             </div>
         );
@@ -40,7 +44,7 @@ export default function NavigationBar(){
                     <a href="/" className="text-zinc-300 text-sm uppercase tracking-wide hover:text-white transition">Home</a>
                     <a href="/event" className="text-zinc-300 text-sm uppercase tracking-wide hover:text-white transition">Events</a>
                     <a href="/about" className="text-zinc-300 text-sm uppercase tracking-wide hover:text-white transition">About</a>
-                    {user && (<Link to="/my-events" className="text-zinc-300 text-sm uppercase tracking-wide hover:text-white transition">My Events</Link> )}
+                    {user && (<Link to="/my-events" className="text-zinc-300 text-sm uppercase tracking-wide hover:text-white transition">My Events</Link>)}
                 </div>
 
                 <div className="hidden md:flex items-center gap-4">

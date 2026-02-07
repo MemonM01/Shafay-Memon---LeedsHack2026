@@ -44,10 +44,10 @@ const LocationSelector = ({ isSelectingLocation, onLocationSelect }: { isSelecti
 
 const userIcon = L.divIcon({
     className: '',
-    html: '<div class="user-location-marker"></div>',
-    iconSize: [16, 16],
-    iconAnchor: [8, 8],
-    popupAnchor: [0, -10]
+    html: '<div style="display: flex; align-items: center; justify-content: center; width: 64px; height: 64px;"><div class="user-location-marker"></div></div>',
+    iconSize: [64, 64],
+    iconAnchor: [32, 32],
+    popupAnchor: [0, -30]
 });
 
 // Component to handle marker interactions requiring map instance
@@ -102,24 +102,12 @@ const Map = ({ center, events, userLocation, activeEvent, isSelectingLocation, o
             {userLocation && (
                 <>
 
-                    <Circle
-                        center={userLocation}
-                        radius={5 * MILE_TO_METERS}
-                        pathOptions={{ color: 'red', fillColor: 'red', fillOpacity: 0.05 }}
-                    />
-                    <Circle
-                        center={userLocation}
-                        radius={3 * MILE_TO_METERS}
-                        pathOptions={{ color: 'yellow', fillColor: 'yellow', fillOpacity: 0.05 }}
-                    />
-                    <Circle
-                        center={userLocation}
-                        radius={1 * MILE_TO_METERS}
-                        pathOptions={{ color: 'green', fillColor: 'green', fillOpacity: 0.05 }}
-                    />
+
                     <Marker position={userLocation} icon={userIcon}>
                         <Popup>
-                            You are here
+                            <div className="flex flex-col gap-2 bg-white border border-zinc-800 rounded-xl p-2">
+                                <h3 className="text-lg font-semibold">You are here</h3>
+                            </div>
                         </Popup>
                     </Marker>
                 </>

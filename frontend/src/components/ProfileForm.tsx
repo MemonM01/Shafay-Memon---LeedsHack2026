@@ -1,21 +1,78 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/Userauth';
 import { supabase } from '../lib/supabaseClient';
 
 export default function ProfileForm() {
-    const { user } = useAuth();
+    const { user, refreshProfile } = useAuth();
     const [isEditing, setIsEditing] = useState(false);
     const [tagInput, setTagInput] = useState('');
+    const [imageFile, setImageFile] = useState<File | null>(null);
+    const [loading, setLoading] = useState(true);
     const [formData, setFormData] = useState({
-        name: user?.user_metadata?.full_name || '',
-        email: user?.email || '',
-        bio: user?.user_metadata?.bio || '',
-        location: user?.user_metadata?.location || '',
-        tags: user?.user_metadata?.tags || [],
-        profilePicture: user?.user_metadata?.avatar_url || 'https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg'
+        username: '',
+        tags: [] as string[],
+        profilePicture: 'https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg'
     });
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    useEffect(() => {
+        // Load from cache first for instant UI
+        const cachedProfile = localStorage.getItem(`profile_${user?.id}`);
+        if (cachedProfile) {
+            try {
+                const parsed = JSON.parse(cachedProfile);
+                setFormData(prev => ({ ...prev, ...parsed }));
+            } catch (e) {
+                console.error("Cache parse error", e);
+            }
+        }
+
+        async function fetchProfile() {
+            if (!user) return;
+            // Only show loader if we don't have cached data
+            if (!localStorage.getItem(`profile_${user.id}`)) {
+                setLoading(true);
+            }
+            try {
+                // Fetch profile and tags
+                const { data: profileData, error: profileError } = await supabase
+                    .from('profiles')
+                    .select(`
+                        username,
+                        profile_picture_url,
+                        profile_tags (
+                            tag_name
+                        )
+                    `)
+                    .eq('id', user.id)
+                    .maybeSingle();
+
+                if (profileError) throw profileError;
+
+                if (profileData) {
+                    const tags = profileData.profile_tags
+                        ? (profileData.profile_tags as any[]).map(t => t.tag_name)
+                        : [];
+
+                    const newProfile = {
+                        username: profileData.username || '',
+                        tags: tags,
+                        profilePicture: profileData.profile_picture_url || 'https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg'
+                    };
+
+                    setFormData(newProfile);
+                    // Update cache
+                    localStorage.setItem(`profile_${user.id}`, JSON.stringify(newProfile));
+                }
+            } catch (err) {
+                console.error('Error fetching profile:', err);
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchProfile();
+    }, [user]);
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({
             ...prev,
@@ -23,62 +80,92 @@ export default function ProfileForm() {
         }));
     };
 
-    const handleFormSubmit = async (data: any) => {
+    const handleFormSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!user) return;
+
+        setLoading(true);
         try {
-            if (!user) {
-                alert('You must be logged in to create an event.');
-                return;
-            }
+            let profilePictureUrl = formData.profilePicture;
 
-            let imageUrl = data.image;
-
-            if (data.imageFile) {
-                const fileExt = data.imageFile.name.split('.').pop();
-                const fileName = `${Date.now()}.${fileExt}`;
-                const filePath = `${user.id}/${fileName}`;
+            if (imageFile) {
+                const fileExt = imageFile.name.split('.').pop();
+                const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+                const filePath = `profiles/${fileName}`;
 
                 const { error: uploadError } = await supabase.storage
-                    .from('event-profile-pictures')
-                    .upload(filePath, data.imageFile, {
-                        upsert: true
-                    });
+                    .from('profile-pictures')
+                    .upload(filePath, imageFile, { upsert: true });
 
-                if (uploadError) {
-                    throw uploadError;
-                }
+                if (uploadError) throw uploadError;
 
                 const { data: { publicUrl } } = supabase.storage
-                    .from('event-profile-pictures')
+                    .from('profile-pictures')
                     .getPublicUrl(filePath);
 
-                imageUrl = publicUrl;
+                profilePictureUrl = publicUrl;
             }
 
-            const { error: dbError } = await supabase
+            // 1. Update Profile
+            const { error: profileError } = await supabase
                 .from('profiles')
-                .insert([
-                    {
-                        profile_picture_url: imageUrl,
-                        username: data.username
-                    }
-                ]);
+                .upsert({
+                    id: user.id,
+                    username: formData.username,
+                    profile_picture_url: profilePictureUrl,
+                });
 
-            if (dbError) throw dbError;
+            if (profileError) throw profileError;
 
-        } catch (error: any) {
-            console.error('Error creating event:', error);
-            if (error.code === '23503') {
-                alert(`Database Error: Constraint Violation.\n\nThe "owner_id" likely references a user table where your ID doesn't exist.\n\nDetails: ${error.details || error.message}`);
-            } else if (error.message?.includes('409') || error.status === 409) {
-                alert('Conflict error: This resource likely already exists.');
-            } else {
-                alert(`Failed to create event: ${error.message || 'Unknown error'}`);
+            // 2. Sync Tags
+            // Delete existing
+            const { error: deleteError } = await supabase
+                .from('profile_tags')
+                .delete()
+                .eq('profile_id', user.id);
+
+            if (deleteError) throw deleteError;
+
+            // Insert new
+            if (formData.tags.length > 0) {
+                const tagsToInsert = formData.tags.map(tag => ({
+                    profile_id: user.id,
+                    tag_name: tag
+                }));
+
+                const { error: insertError } = await supabase
+                    .from('profile_tags')
+                    .insert(tagsToInsert);
+
+                if (insertError) throw insertError;
             }
+
+            const finalProfile = {
+                ...formData,
+                profilePicture: profilePictureUrl
+            };
+
+            // Update local state and cache
+            setFormData(finalProfile);
+            localStorage.setItem(`profile_${user.id}`, JSON.stringify(finalProfile));
+
+            // Trigger refresh in AuthContext
+            await refreshProfile();
+
+            setIsEditing(false);
+            alert('Profile updated successfully!');
+        } catch (error: any) {
+            console.error('Error updating profile:', error);
+            alert(`Failed to update profile: ${error.message}`);
+        } finally {
+            setLoading(false);
         }
     };
+
     const handleProfilePictureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
+            setImageFile(file);
             const reader = new FileReader();
             reader.onloadend = () => {
                 setFormData(prev => ({
@@ -111,6 +198,15 @@ export default function ProfileForm() {
         }));
     };
 
+    if (loading && !isEditing) {
+        return (
+            <div className="w-full max-w-2xl mx-auto p-12 bg-zinc-900 rounded-lg border border-zinc-800 flex flex-col items-center justify-center">
+                <div className="w-8 h-8 border-2 border-sky-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                <p className="text-zinc-400">Loading profile...</p>
+            </div>
+        );
+    }
+
     return (
         <div className="w-full max-w-2xl mx-auto p-6 bg-zinc-900 rounded-lg border border-zinc-800">
             <div className="flex justify-between items-center mb-6">
@@ -128,11 +224,23 @@ export default function ProfileForm() {
             <form onSubmit={handleFormSubmit} className="space-y-6">
                 {/* Profile Picture */}
                 <div className="flex flex-col items-center gap-4">
-                    <img
-                        src={formData.profilePicture}
-                        alt="Profile"
-                        className="h-32 w-32 rounded-full object-cover border-4 border-sky-500"
-                    />
+                    <div className="relative group">
+                        <img
+                            src={formData.profilePicture}
+                            alt="Profile"
+                            key={formData.profilePicture} // Force re-render on URL change
+                            onError={(e) => {
+                                // Fallback to default if image fails to load
+                                (e.target as HTMLImageElement).src = 'https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg';
+                            }}
+                            className="h-32 w-32 rounded-full object-cover border-4 border-sky-500 shadow-xl"
+                        />
+                        {loading && (
+                            <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center">
+                                <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            </div>
+                        )}
+                    </div>
                     {isEditing && (
                         <label className="cursor-pointer bg-zinc-800 hover:bg-zinc-700 text-sky-200 px-4 py-2 rounded-md text-sm transition">
                             Change Picture
@@ -146,44 +254,25 @@ export default function ProfileForm() {
                     )}
                 </div>
 
-                {/* Name Field */}
                 <div>
-                    <label className="block text-sm font-medium text-zinc-300 mb-2">Display Name</label>
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">Username</label>
                     {isEditing ? (
                         <input
                             type="text"
-                            name="name"
-                            value={formData.name}
+                            name="username"
+                            value={formData.username}
                             onChange={handleChange}
                             className="w-full bg-zinc-800 border border-zinc-700 text-white px-4 py-2 rounded-md focus:outline-none focus:border-sky-500 transition"
-                            placeholder="Enter your display name"
+                            placeholder="Enter your username"
                         />
                     ) : (
-                        <p className="text-white">{formData.name || 'Not provided'}</p>
+                        <p className="text-white">{formData.username || 'Not provided'}</p>
                     )}
                 </div>
 
-                {/* Email Field (Read-only) */}
                 <div>
                     <label className="block text-sm font-medium text-zinc-300 mb-2">Email</label>
-                    <p className="text-zinc-400">{formData.email || 'Not provided'}</p>
-                </div>
-
-                {/* Bio Field */}
-                <div>
-                    <label className="block text-sm font-medium text-zinc-300 mb-2">Bio</label>
-                    {isEditing ? (
-                        <textarea
-                            name="bio"
-                            value={formData.bio}
-                            onChange={handleChange}
-                            rows={4}
-                            className="w-full bg-zinc-800 border border-zinc-700 text-white px-4 py-2 rounded-md focus:outline-none focus:border-sky-500 transition resize-none"
-                            placeholder="Tell us about yourself"
-                        />
-                    ) : (
-                        <p className="text-zinc-300">{formData.bio || 'No bio provided'}</p>
-                    )}
+                    <p className="text-zinc-400">{user?.email || 'Not provided'}</p>
                 </div>
 
                 {/* Tags Field */}
@@ -238,9 +327,10 @@ export default function ProfileForm() {
                     <div className="flex gap-3 pt-4">
                         <button
                             type="submit"
-                            className="cursor-pointer flex-1 bg-sky-500 hover:bg-sky-600 text-white px-4 py-2 rounded-md font-medium transition"
+                            disabled={loading}
+                            className="cursor-pointer flex-1 bg-sky-500 hover:bg-sky-600 text-white px-4 py-2 rounded-md font-medium transition disabled:bg-zinc-700"
                         >
-                            Save Changes
+                            {loading ? 'Saving...' : 'Save Changes'}
                         </button>
                         <button
                             type="button"
