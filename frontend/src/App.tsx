@@ -19,8 +19,8 @@ function App() {
       <Routes>
         <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
         <Route path="/register" element={user ? <Navigate to="/" replace /> : <Register />} />
-        <Route path="/event" element={user ? <Navigate to="/" replace /> : <Grid />} />
-        <Route path="/about" element={user ? <Navigate to="/" replace /> : <About />} />
+        <Route path="/event" element={<Grid />} />
+        <Route path="/about" element={<About />} />
         <Route path="/events/:id" element={<EventDetails />} />
         <Route
           path="/"
