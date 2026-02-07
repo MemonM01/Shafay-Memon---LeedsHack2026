@@ -15,8 +15,58 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({ initialData, onSubmit
     const [tags, setTags] = useState<string[]>(initialData?.tags || []);
     const [tagInput, setTagInput] = useState('');
     const [imagePreview, setImagePreview] = useState<string | null>(initialData?.image || null);
+    const [locationInput, setLocationInput] = useState(locationName || initialData?.location || '');
+    const [suggestions, setSuggestions] = useState<any[]>([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const [geocodedPosition, setGeocodedPosition] = useState<[number, number] | null>(initialData?.position || null);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const wrapperRef = useRef<HTMLDivElement>(null);
+
+    // Sync prop with local state if it changes externally
+    React.useEffect(() => {
+        if (locationName) {
+            setLocationInput(locationName);
+        }
+    }, [locationName]);
+
+    // Close suggestions when clicking outside
+    React.useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+                setShowSuggestions(false);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [wrapperRef]);
+
+    const handleLocationChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setLocationInput(value);
+
+        if (value.length > 2) {
+            try {
+                const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(value)}&limit=5`);
+                const data = await response.json();
+                setSuggestions(data);
+                setShowSuggestions(true);
+            } catch (error) {
+                console.error("Autocomplete failed", error);
+            }
+        } else {
+            setSuggestions([]);
+            setShowSuggestions(false);
+        }
+    };
+
+    const selectSuggestion = (suggestion: any) => {
+        setLocationInput(suggestion.display_name.split(',')[0]);
+        setGeocodedPosition([parseFloat(suggestion.lat), parseFloat(suggestion.lon)]);
+        setShowSuggestions(false);
+    };
 
     const handleTagKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter') {
@@ -52,8 +102,9 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({ initialData, onSubmit
             date,
             time,
             tags,
-            image: imagePreview, // In a real app we'd upload `image` and get a URL
-            location: locationName
+            image: imagePreview,
+            location: locationInput,
+            position: geocodedPosition
         });
     };
 
@@ -137,17 +188,32 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({ initialData, onSubmit
 
             <div>
                 <label className="block text-sm font-medium text-zinc-400 mb-1">Location</label>
-                <div className="flex gap-2">
-                    <input
-                        type="text"
-                        value={locationName || ''}
-                        readOnly
-                        className="flex-1 bg-zinc-800/50 border-zinc-700/50 rounded-lg p-2.5 text-zinc-500 cursor-not-allowed"
-                        placeholder="Select location on map"
-                    />
+                <div className="flex gap-2 relative">
+                    <div className="relative flex-1" ref={wrapperRef}>
+                        <input
+                            type="text"
+                            value={locationInput}
+                            onChange={handleLocationChange}
+                            className="w-full bg-zinc-800 border-zinc-700 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                            placeholder="Type address or select on map"
+                        />
+                        {showSuggestions && suggestions.length > 0 && (
+                            <ul className="absolute z-50 w-full bg-zinc-800 border border-zinc-700 rounded-lg mt-1 shadow-lg max-h-48 overflow-y-auto">
+                                {suggestions.map((suggestion, index) => (
+                                    <li
+                                        key={index}
+                                        onClick={() => selectSuggestion(suggestion)}
+                                        className="px-3 py-2 hover:bg-zinc-700 cursor-pointer text-sm text-zinc-300"
+                                    >
+                                        {suggestion.display_name}
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
                     <button
                         type="button"
-                        onClick={() => onSelectLocation({ title, description, date, time, tags, image: imagePreview })}
+                        onClick={() => onSelectLocation({ title, description, date, time, tags, image: imagePreview, location: locationInput })}
                         className="bg-zinc-700 hover:bg-zinc-600 text-white px-4 py-2 rounded-lg transition-colors whitespace-nowrap"
                     >
                         Pick on Map

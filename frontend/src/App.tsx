@@ -7,6 +7,7 @@ import Grid from './pages/Grid';
 import Navbar from "./components/NavigationBar";
 import About from "./pages/About";
 
+
 import EventDetails from './pages/EventDetails';
 
 function App() {

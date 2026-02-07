@@ -96,7 +96,7 @@ const Landing = () => {
             date: data.date, // Format if needed
             time: data.time,
             location: data.location || locationName || 'Unknown Location',
-            position: pendingEventData?.position || userLocation || [53.8008, -1.5491],
+            position: data.position || pendingEventData?.position || userLocation || [53.8008, -1.5491],
             image: data.image || 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=800&q=80', // Default image
             tags: data.tags
         };
@@ -129,13 +129,14 @@ const Landing = () => {
                     activeEvent={activeEvent}
                     isSelectingLocation={isSelectingLocation}
                     onLocationSelect={handleLocationSelected}
+                    pendingLocation={pendingEventData?.position}
                 />
 
                 {/* Create Event Button */}
                 {!isSelectingLocation && (
                     <button
                         onClick={handleCreateEventClick}
-                        className="absolute bottom-24 right-6 z-[1000] bg-white text-black p-4 rounded-full shadow-lg hover:scale-110 transition-transform duration-200 group"
+                        className="absolute bottom-24 right-6 z-1000 bg-white text-black p-4 rounded-full shadow-lg hover:scale-110 transition-transform duration-200 group"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 group-hover:rotate-90 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -145,7 +146,7 @@ const Landing = () => {
 
                 {/* Location Selection Hint */}
                 {isSelectingLocation && (
-                    <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[1000] bg-black/80 text-white px-6 py-3 rounded-full backdrop-blur-md border border-white/20 shadow-xl animate-bounce">
+                    <div className="absolute top-6 left-1/2 -translate-x-1/2 z-1000 bg-black/80 text-white px-6 py-3 rounded-full backdrop-blur-md border border-white/20 shadow-xl animate-bounce">
                         Click on the map to select location
                     </div>
                 )}
@@ -153,7 +154,10 @@ const Landing = () => {
 
             <Modal
                 isOpen={isCreateModalOpen}
-                onClose={() => setIsCreateModalOpen(false)}
+                onClose={() => {
+                    setIsCreateModalOpen(false);
+                    setPendingEventData(null);
+                }}
                 title="Create New Event"
             >
                 <CreateEventForm

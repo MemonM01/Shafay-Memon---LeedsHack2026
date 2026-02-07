@@ -26,6 +26,7 @@ type MapProps = {
     activeEvent?: Event | null
     isSelectingLocation?: boolean
     onLocationSelect?: (lat: number, lng: number) => void
+    pendingLocation?: [number, number] | null
 }
 
 const MILE_TO_METERS = 1609.34;
@@ -72,7 +73,6 @@ const EventMarker = ({ event }: { event: Event }) => {
     )
 }
 
-// Handler for external map movements (e.g. from sidebar)
 const MapController = ({ activeEvent }: { activeEvent?: Event | null }) => {
     const map = useMap();
 
@@ -88,7 +88,7 @@ const MapController = ({ activeEvent }: { activeEvent?: Event | null }) => {
     return null;
 }
 
-const Map = ({ center, events, userLocation, activeEvent, isSelectingLocation, onLocationSelect }: MapProps) => {
+const Map = ({ center, events, userLocation, activeEvent, isSelectingLocation, onLocationSelect, pendingLocation }: MapProps) => {
     return (
         <MapContainer center={center} zoom={13} scrollWheelZoom={true} className={`h-full w-full ${isSelectingLocation ? 'cursor-crosshair' : ''}`}>
             <TileLayer
@@ -123,6 +123,26 @@ const Map = ({ center, events, userLocation, activeEvent, isSelectingLocation, o
                         </Popup>
                     </Marker>
                 </>
+            )}
+            {pendingLocation && (
+                <Marker position={pendingLocation}
+                    icon={L.divIcon({
+                        className: '',
+                        html: '<div class="pending-location-marker"></div>',
+                        iconSize: [20, 20],
+                        iconAnchor: [10, 10],
+                    })}
+                    ref={(ref) => {
+                        if (ref) {
+                            ref.openPopup();
+                        }
+                    }}
+                >
+                    <Popup autoClose={false} closeOnClick={false} className="font-bold text-center">
+                        📍 Selected Location
+                        <div className="text-xs font-normal text-gray-500 mt-1"> Event will be created here</div>
+                    </Popup>
+                </Marker>
             )}
             {events.map((event) => (
                 <EventMarker
