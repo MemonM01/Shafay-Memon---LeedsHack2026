@@ -139,7 +139,7 @@ const Map = ({ center, events, userLocation, activeEvent, isSelectingLocation, o
                     }}
                 >
                     <Popup autoClose={false} closeOnClick={false} className="font-bold text-center">
-                        📍 Selected Location
+                        Selected Location
                         <div className="text-xs font-normal text-gray-500 mt-1"> Event will be created here</div>
                     </Popup>
                 </Marker>

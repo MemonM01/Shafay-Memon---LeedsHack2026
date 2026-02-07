@@ -15,6 +15,7 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({ initialData, onSubmit
     const [tags, setTags] = useState<string[]>(initialData?.tags || []);
     const [tagInput, setTagInput] = useState('');
     const [imagePreview, setImagePreview] = useState<string | null>(initialData?.image || null);
+    const [imageFile, setImageFile] = useState<File | null>(null);
     const [locationInput, setLocationInput] = useState(locationName || initialData?.location || '');
     const [suggestions, setSuggestions] = useState<any[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
@@ -86,6 +87,7 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({ initialData, onSubmit
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
+            setImageFile(file);
             const reader = new FileReader();
             reader.onloadend = () => {
                 setImagePreview(reader.result as string);
@@ -103,6 +105,7 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({ initialData, onSubmit
             time,
             tags,
             image: imagePreview,
+            imageFile,
             location: locationInput,
             position: geocodedPosition
         });
