@@ -81,3 +81,47 @@ body {
 .leaflet-popup-content {
   margin: 0 !important;
 }
+
+/* Event popup should hug the card size so the close button aligns */
+.event-popup .leaflet-popup-content-wrapper {
+  padding: 0 !important;
+}
+
+.event-popup .leaflet-popup-close-button {
+  top: 6px !important;
+  right: 6px !important;
+}
+
+/* Range slider styling */
+input[type="range"].slider {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+input[type="range"].slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: #0ea5e9;
+  cursor: pointer;
+  border-radius: 50%;
+  border: 2px solid #fff;
+}
+
+input[type="range"].slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: #0ea5e9;
+  cursor: pointer;
+  border-radius: 50%;
+  border: 2px solid #fff;
+}
+
+input[type="range"].slider::-webkit-slider-thumb:hover {
+  background: #0284c7;
+}
+
+input[type="range"].slider::-moz-range-thumb:hover {
+  background: #0284c7;
+}
