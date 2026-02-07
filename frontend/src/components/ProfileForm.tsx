@@ -11,7 +11,7 @@ export default function ProfileForm() {
         bio: user?.user_metadata?.bio || '',
         location: user?.user_metadata?.location || '',
         tags: user?.user_metadata?.tags || [],
-        profilePicture: user?.user_metadata?.avatar_url || 'https://via.placeholder.com/150'
+        profilePicture: user?.user_metadata?.avatar_url || 'https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg'
     });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {

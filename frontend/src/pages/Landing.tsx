@@ -29,16 +29,6 @@ const Landing = () => {
     const [pendingEventData, setPendingEventData] = useState<any>(null);
     const [locationName, setLocationName] = useState<string>('');
 
-    // We update localEvents when contextEvents changes, or just use contextEvents directly.
-    // However, the original code had 'localEvents' state for optimistic updates.
-    // It's cleaner to rely on contextEvents now.
-
-    const handleCreateEventClick = () => {
-        setIsCreateModalOpen(true);
-        setPendingEventData(null);
-        setLocationName('');
-    };
-
     const handleLocationSelectRequest = (data: any) => {
         setPendingEventData(data);
         setIsCreateModalOpen(false);
@@ -173,18 +163,7 @@ const Landing = () => {
                     pendingLocation={pendingEventData?.position}
                 />
 
-                {/* Create Event Button */}
-                {!isSelectingLocation && user && (
-                    <button
-                        onClick={handleCreateEventClick}
-                        className="absolute bottom-24 right-6 z-1000 bg-white text-black p-4 rounded-full shadow-lg hover:scale-110 transition-transform duration-200 group"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 group-hover:rotate-90 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                        </svg>
-                    </button>
-                )}
-
+                
                 {/* Location Selection Hint */}
                 {isSelectingLocation && (
                     <div className="absolute top-6 left-1/2 -translate-x-1/2 z-1000 bg-black/80 text-white px-6 py-3 rounded-full backdrop-blur-md border border-white/20 shadow-xl animate-bounce">
@@ -193,6 +172,7 @@ const Landing = () => {
                 )}
             </div>
 
+            {/* Create Event Modal */}
             <Modal
                 isOpen={isCreateModalOpen}
                 onClose={() => {
@@ -200,7 +180,7 @@ const Landing = () => {
                     setPendingEventData(null);
                 }}
                 title="Create New Event"
-                size="lg" // Make modal larger for better layout
+                size="lg"
             >
                 <CreateEventForm
                     initialData={pendingEventData}

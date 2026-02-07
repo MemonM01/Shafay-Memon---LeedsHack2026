@@ -9,6 +9,7 @@ import About from "./pages/About";
 import MyEvents from "./pages/MyEvents";
 import ProtectedRoute from './components/ProtectedRoute';
 import Profile from "./pages/Profile"
+import CreateButton from './components/CreateButton';
 
 
 import EventDetails from './pages/EventDetails';
@@ -35,6 +36,7 @@ function App() {
               <Route path="/" element={<Landing />} />
             </Routes>
           </div>
+          <CreateButton />
         </div>
       </EventsProvider>
     </Router>

@@ -10,24 +10,18 @@ export default function NavigationBar(){
 
     const navigate = useNavigate();
 
-    const handleCreateEventClick = () => {
-        // Navigate to landing and signal to open create modal there
-        navigate('/', { state: { openCreate: true } });
-    };
-
     const AuthActions = () => {
         if (!user) {
             return (
-                <a href="/login" className="text-sky-200 no-underline text-sm md:text-base hover:text-white font-medium">Sign In</a>
+                <a href="/login" className="text-zinc-300 text-sm uppercase tracking-wide hover:text-white transition">Sign In</a>
             );
         }
 
         return (
                 <div className="flex items-center gap-3">
-                <button onClick={signOut} className="text-sky-200 text-sm md:text-base hover:text-white font-medium bg-transparent border-0 p-0 cursor-pointer">Sign Out</button>
-                <button onClick={handleCreateEventClick} className="inline-flex items-center gap-2 bg-sky-500 hover:bg-sky-600 text-white px-3 py-1.5 rounded-md text-sm font-semibold transition-shadow shadow-sm hover:shadow-md">Create</button>
+                <button onClick={signOut} className="text-zinc-300 text-sm uppercase tracking-wide hover:text-white transition">Sign Out</button>
                 <button onClick={() => navigate('/profile')} className="h-8 w-8 rounded-full bg-zinc-700 hover:bg-zinc-600 flex items-center justify-center border border-zinc-600 overflow-hidden transition cursor-pointer">
-                    <img src="https://via.placeholder.com/32" alt="Profile" className="h-full w-full object-cover" />
+                    <img src="https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg" alt="Profile" className="h-full w-full object-cover" />
                 </button>
             </div>
         );

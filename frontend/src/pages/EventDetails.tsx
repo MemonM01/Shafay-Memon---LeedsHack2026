@@ -203,12 +203,10 @@ export default function EventDetails() {
                             Event
                         </span>
                         <div className="flex items-center gap-2 text-zinc-300 bg-black/40 backdrop-blur-md px-3 py-1 rounded-full border border-white/10">
-                            <span>📍</span>
                             <span className="text-sm font-medium">{event.location}</span>
                         </div>
                         {/* Interest Badge */}
                         <div className="flex items-center gap-2 text-zinc-300 bg-blue-900/40 backdrop-blur-md px-3 py-1 rounded-full border border-blue-500/30">
-                            <span className="text-blue-400">👥</span>
                             <span className="text-sm font-bold text-blue-200">{interestCount} Interested</span>
                         </div>
                     </div>
@@ -232,7 +230,7 @@ export default function EventDetails() {
                 <div className="md:col-span-2 space-y-8">
                     <div className="bg-zinc-900/50 backdrop-blur-sm border border-zinc-800 rounded-3xl p-8">
                         <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                            <span>📝</span> Description
+                            Description
                         </h2>
                         <p className="text-zinc-400 leading-relaxed text-lg whitespace-pre-line">
                             {event.description}
@@ -241,7 +239,7 @@ export default function EventDetails() {
 
                     <div className="bg-zinc-900/50 backdrop-blur-sm border border-zinc-800 rounded-3xl p-8">
                         <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                            <span>ℹ️</span> Additional Info
+                            Additional Info
                         </h2>
                         <p className="text-zinc-400">
                             {event.tags && event.tags.length > 0 ? (
@@ -274,7 +272,7 @@ export default function EventDetails() {
                         </div>
 
                         <button
-                            className={`w-full py-4 font-black uppercase tracking-widest text-sm rounded-xl transition-all shadow-lg hover:shadow-xl ${isInterested
+                            className={`cursor-pointer w-full py-4 font-black uppercase tracking-widest text-sm rounded-xl transition-all shadow-lg hover:shadow-xl ${isInterested
                                 ? 'bg-zinc-800 text-white hover:bg-zinc-700 border border-zinc-600'
                                 : 'bg-white text-black hover:bg-zinc-200'
                                 }`}
