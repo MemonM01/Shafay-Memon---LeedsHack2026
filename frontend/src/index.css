@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* Reserve space for scrollbar to avoid layout shift when it appears/disappears */
+html {
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
+}
+
 :root {
   color-scheme: dark;
 }

@@ -15,22 +15,23 @@ export default function NavigationBar(){
         }
 
         return (
-            <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3">
                 <button onClick={signOut} className="text-sky-200 text-sm md:text-base hover:text-white font-medium bg-transparent border-0 p-0 cursor-pointer">Sign Out</button>
-                <a href="/create" className="inline-flex items-center gap-2 bg-sky-500 hover:bg-sky-600 text-white px-3 py-1.5 rounded-md text-sm font-semibold transition">Create</a>
+                <a href="/create" className="inline-flex items-center gap-2 bg-sky-500 hover:bg-sky-600 text-white px-3 py-1.5 rounded-md text-sm font-semibold transition-shadow shadow-sm hover:shadow-md">Create</a>
             </div>
         );
     }
 
     return (
         <nav className="sticky top-0 z-50 bg-transparent border-b border-zinc-800 shadow-sm">
-            <div className="max-w-[1100px] mx-auto px-4 py-3 flex items-center justify-between">
+            <div className="max-w-[1100px] mx-auto px-4 py-3 flex items-center relative">
                 <a href="/" className="flex items-center gap-3">
                     <img src={LinkUpLogo} alt="LinkUp" className="h-8 w-auto rounded-md" />
                     <span className="text-white font-semibold tracking-wide">LinkUp</span>
                 </a>
+                <div className="flex-1" />
 
-                <div className="hidden md:flex items-center gap-8">
+                <div className="hidden md:flex items-center gap-8 absolute left-1/2 transform -translate-x-1/2 z-10">
                     <a href="/" className="text-zinc-300 text-sm uppercase tracking-wide hover:text-white transition">Home</a>
                     <a href="/event" className="text-zinc-300 text-sm uppercase tracking-wide hover:text-white transition">Events</a>
                     <a href="/about" className="text-zinc-300 text-sm uppercase tracking-wide hover:text-white transition">About</a>
