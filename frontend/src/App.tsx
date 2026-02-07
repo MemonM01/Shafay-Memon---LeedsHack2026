@@ -20,26 +20,6 @@ function App() {
 
   return (
     <Router>
-      <div className="h-screen flex flex-col">
-        <Navbar />
-        <div className="flex-1 min-h-0">
-          <Routes>
-            <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
-            <Route path="/register" element={user ? <Navigate to="/" replace /> : <Register />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/event" element={<Grid />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/events/:id" element={<EventDetails />} />
-            <Route path="/my-events" element={<ProtectedRoute> <MyEvents /> </ProtectedRoute>} />
-            <Route
-              path="/"
-              element={
-                <Landing />
-              }
-            />
-          </Routes>
-        </div>
-      </div>
       <EventsProvider>
         <div className="h-screen flex flex-col">
           <Navbar />
@@ -47,16 +27,12 @@ function App() {
             <Routes>
               <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
               <Route path="/register" element={user ? <Navigate to="/" replace /> : <Register />} />
-              <Route path="/profile" element={<Profile />} />
+              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
               <Route path="/event" element={<Grid />} />
               <Route path="/about" element={<About />} />
               <Route path="/events/:id" element={<EventDetails />} />
-              <Route
-                path="/"
-                element={
-                  <Landing />
-                }
-              />
+              <Route path="/my-events" element={<ProtectedRoute><MyEvents /></ProtectedRoute>} />
+              <Route path="/" element={<Landing />} />
             </Routes>
           </div>
         </div>
