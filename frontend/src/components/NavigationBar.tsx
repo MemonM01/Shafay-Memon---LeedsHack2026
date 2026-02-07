@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useAuth } from '../context/Userauth';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import LinkUpLogo from '../assets/LinkUpLogo.png';
+
 
 export default function NavigationBar(){
     const {user, signOut} = useAuth();
@@ -42,6 +43,7 @@ export default function NavigationBar(){
                     <a href="/" className="text-zinc-300 text-sm uppercase tracking-wide hover:text-white transition">Home</a>
                     <a href="/event" className="text-zinc-300 text-sm uppercase tracking-wide hover:text-white transition">Events</a>
                     <a href="/about" className="text-zinc-300 text-sm uppercase tracking-wide hover:text-white transition">About</a>
+                    {user && (<Link to="/my-events" className="text-zinc-300 text-sm uppercase tracking-wide hover:text-white transition">My Events</Link> )}
                 </div>
 
                 <div className="hidden md:flex items-center gap-4">
@@ -69,6 +71,7 @@ export default function NavigationBar(){
                         <a href="/" className="text-sky-200 text-base hover:text-white">Home</a>
                         <a href="/event" className="text-sky-200 text-base hover:text-white">Events</a>
                         <a href="/about" className="text-sky-200 text-base hover:text-white">About</a>
+                        {user && (<Link to="/my-events" className="text-sky-200 text-base hover:text-white" onClick={() => setOpen(false)}>My Events</Link>)}
                         <div className="pt-2 border-t border-zinc-800">
                             <AuthActions />
                         </div>

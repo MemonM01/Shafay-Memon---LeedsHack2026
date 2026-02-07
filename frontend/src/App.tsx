@@ -6,6 +6,8 @@ import Landing from './pages/Landing';
 import Grid from './pages/Grid';
 import Navbar from "./components/NavigationBar";
 import About from "./pages/About";
+import MyEvents from "./pages/MyEvents";
+import ProtectedRoute from './components/ProtectedRoute';
 
 
 import EventDetails from './pages/EventDetails';
@@ -24,6 +26,7 @@ function App() {
             <Route path="/event" element={<Grid />} />
             <Route path="/about" element={<About />} />
             <Route path="/events/:id" element={<EventDetails />} />
+            <Route path="/my-events" element={<ProtectedRoute> <MyEvents /> </ProtectedRoute>}/>
             <Route
               path="/"
               element={
