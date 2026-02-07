@@ -15,20 +15,24 @@ function App() {
 
   return (
     <Router>
-      <Navbar />
-      <Routes>
-        <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
-        <Route path="/register" element={user ? <Navigate to="/" replace /> : <Register />} />
-        <Route path="/event" element={<Grid />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/events/:id" element={<EventDetails />} />
-        <Route
-          path="/"
-          element={
-            <Landing />
-          }
-        />
-      </Routes>
+      <div className="h-screen flex flex-col">
+        <Navbar />
+        <div className="flex-1 min-h-0">
+          <Routes>
+            <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
+            <Route path="/register" element={user ? <Navigate to="/" replace /> : <Register />} />
+            <Route path="/event" element={<Grid />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/events/:id" element={<EventDetails />} />
+            <Route
+              path="/"
+              element={
+                <Landing />
+              }
+            />
+          </Routes>
+        </div>
+      </div>
     </Router>
   );
 }

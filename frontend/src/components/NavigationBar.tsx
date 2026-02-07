@@ -1,11 +1,18 @@
 import { useState } from 'react';
 import { useAuth } from '../context/Userauth';
+import { useNavigate } from 'react-router-dom';
 import LinkUpLogo from '../assets/LinkUpLogo.png';
-
 
 export default function NavigationBar(){
     const {user, signOut} = useAuth();
     const [open, setOpen] = useState(false);
+
+    const navigate = useNavigate();
+
+    const handleCreateEventClick = () => {
+        // Navigate to landing and signal to open create modal there
+        navigate('/', { state: { openCreate: true } });
+    };
 
     const AuthActions = () => {
         if (!user) {
@@ -17,7 +24,7 @@ export default function NavigationBar(){
         return (
                 <div className="flex items-center gap-3">
                 <button onClick={signOut} className="text-sky-200 text-sm md:text-base hover:text-white font-medium bg-transparent border-0 p-0 cursor-pointer">Sign Out</button>
-                <a href="/" className="inline-flex items-center gap-2 bg-sky-500 hover:bg-sky-600 text-white px-3 py-1.5 rounded-md text-sm font-semibold transition-shadow shadow-sm hover:shadow-md">Create</a>
+                <button onClick={handleCreateEventClick} className="inline-flex items-center gap-2 bg-sky-500 hover:bg-sky-600 text-white px-3 py-1.5 rounded-md text-sm font-semibold transition-shadow shadow-sm hover:shadow-md">Create</button>
             </div>
         );
     }
