@@ -8,7 +8,7 @@ type EventCardProps = {
 
 export default function EventCard({ event, onClick }: EventCardProps) {
   const fallback = "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1200&q=80";
-
+  const date = new Date(event.date)
   return (
     <div
       onClick={onClick}
@@ -29,7 +29,7 @@ export default function EventCard({ event, onClick }: EventCardProps) {
         {/* Date Badge */}
         <div className="absolute top-3 right-3 z-20 flex flex-col items-center justify-center rounded-xl bg-white/10 backdrop-blur-md border border-white/20 px-3 py-1.5 text-white shadow-lg">
           <span className="text-xs font-bold uppercase tracking-wider">{event.date.split(' ')[0]}</span>
-          <span className="text-lg font-black">{event.date.split(' ')[1] || '15'}</span>
+          <span className="text-lg font-black">{date.toLocaleDateString('en-US', { weekday: 'short' })}</span>
         </div>
 
         {/* Interest Count Badge */}
