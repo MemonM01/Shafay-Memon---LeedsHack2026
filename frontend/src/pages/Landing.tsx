@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Map from '../components/Map'
 import type { Event } from '../types/Events';
 import Sidebar from '../components/Sidebar';
@@ -9,6 +10,8 @@ import CreateEventForm from '../components/CreateEventForm';
 const Landing = () => {
     const userLocation = useUserLocation();
     const [activeEvent, setActiveEvent] = useState<Event | null>(null);
+    const location = useLocation();
+    const navigate = useNavigate();
 
     const events: Event[] = [
         {
@@ -107,11 +110,20 @@ const Landing = () => {
         setLocationName('');
     };
 
+    // Open create modal if navigated here with state.openCreate
+    useEffect(() => {
+        if ((location.state as any)?.openCreate) {
+            setIsCreateModalOpen(true);
+            // clear history state so reloading doesn't reopen modal
+            navigate(location.pathname, { replace: true, state: {} });
+        }
+    }, [location, navigate]);
+
     // Default center if user location isn't available yet (Leeds)
     const center: [number, number] = userLocation ? [userLocation[0], userLocation[1]] : [53.8008, -1.5491];
 
     return (
-        <div className="flex h-screen w-full bg-black overflow-hidden relative">
+        <div className="flex h-full w-full bg-black overflow-hidden relative">
             {/* Sidebar - Desktop */}
             <div className="w-1/3 min-w-[400px] max-w-[500px] h-full z-30 relative shadow-2xl hidden md:block">
                 <Sidebar

@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
-/* Reserve space for scrollbar to avoid layout shift when it appears/disappears */
+/* Prefer not forcing a scrollbar — allow pages to fit the viewport.
+   Keep a stable gutter when available but don't always show scrollbars. */
 html {
-  overflow-y: scroll;
   scrollbar-gutter: stable;
 }
 
