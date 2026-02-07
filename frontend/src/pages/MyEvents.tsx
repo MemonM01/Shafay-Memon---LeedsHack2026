@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../context/Userauth";
+import EventCard from "../components/EventCard";
+import type { Event as AppEvent } from "../types/Events";
 
 type Tab = "going" | "hosted";
 
@@ -21,6 +23,27 @@ type AttendeeRow = {
   events: EventRow | null;
 };
 
+function toAppEvent(e: EventRow): AppEvent {
+  const dt = e.timestamp ? new Date(e.timestamp) : null;
+
+  const date = dt ? dt.toISOString().slice(0, 10) : "";
+  const time = dt ? dt.toTimeString().slice(0, 5) : "";
+
+  return {
+    id: String(e.id),
+    title: e.name ?? "Untitled",
+    description: e.description ?? "",
+    date,
+    time,
+    location: e.location ?? "Unknown Location",
+    position: [Number(e.latitude ?? 0), Number(e.longitude ?? 0)],
+    image:
+      e.image_url ??
+      "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=800&q=80",
+    tags: [], // you can load event_tags later if you want
+  };
+}
+
 export default function MyEvents() {
   const { user } = useAuth();
   const [tab, setTab] = useState<Tab>("going");
@@ -36,7 +59,6 @@ export default function MyEvents() {
 
       setLoading(true);
 
-      // 1) GOING: from event_attendees joined to events
       const { data: goingData, error: goingError } = await supabase
         .from("event_attendees")
         .select(
@@ -58,7 +80,6 @@ export default function MyEvents() {
         .eq("profile_id", user.id)
         .order("joined_event_time", { ascending: false });
 
-      // 2) HOSTED: events where owner_id = current user
       const { data: hostedData, error: hostedError } = await supabase
         .from("events")
         .select(
@@ -83,11 +104,11 @@ export default function MyEvents() {
       if (hostedError) console.error("hostedError", hostedError);
 
       const goingEvents =
-        (goingData as AttendeeRow[] | null)
-          ?.map((r) => r.events)
-          .filter(Boolean) as EventRow[] || [];
+        (goingData as AttendeeRow[] | null)?.map((r) => r.events).filter(Boolean) as
+          | EventRow[]
+          | undefined;
 
-      setGoing(goingEvents);
+      setGoing(goingEvents ?? []);
       setHosted((hostedData as EventRow[] | null) ?? []);
 
       setLoading(false);
@@ -124,6 +145,7 @@ export default function MyEvents() {
           >
             Going ({going.length})
           </button>
+
           <button
             onClick={() => setTab("hosted")}
             className={`px-3 py-1.5 rounded-lg text-sm ${
@@ -140,35 +162,22 @@ export default function MyEvents() {
       ) : list.length === 0 ? (
         <p className="mt-6 text-white/70">No events in this list yet.</p>
       ) : (
-        <div className="mt-6 grid gap-3">
-          {list.map((e) => (
-            <div
-              key={e.id}
-              className="rounded-2xl border border-white/10 bg-white/5 p-4 hover:bg-white/10 transition"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h2 className="text-lg font-semibold">{e.name}</h2>
-                  {e.timestamp && (
-                    <p className="text-sm text-white/70 mt-1">
-                      {new Date(e.timestamp).toLocaleString()}
-                    </p>
-                  )}
-                  {e.location && <p className="text-sm text-white/70">{e.location}</p>}
-                </div>
+        <div className="mt-6 grid gap-4">
+          {list.map((e) => {
+            const appEvent = toAppEvent(e);
 
+            return (
+              <div key={appEvent.id} className="relative">
                 {tab === "hosted" && (
-                  <span className="text-xs rounded-full bg-sky-500/20 px-2 py-1 text-sky-200">
+                  <span className="absolute right-3 top-3 z-10 text-xs rounded-full bg-sky-500/20 px-2 py-1 text-sky-200">
                     HOSTED BY YOU
                   </span>
                 )}
-              </div>
 
-              {e.description && (
-                <p className="mt-3 text-sm text-white/70 line-clamp-3">{e.description}</p>
-              )}
-            </div>
-          ))}
+                <EventCard event={appEvent} />
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
