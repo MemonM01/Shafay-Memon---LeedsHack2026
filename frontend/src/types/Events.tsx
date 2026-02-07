@@ -7,5 +7,5 @@ export type Event = {
     time: string
     image: string
     position: [number, number]
-
+    tags?: string[]
 }

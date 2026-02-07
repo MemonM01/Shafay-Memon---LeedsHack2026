@@ -3,6 +3,7 @@ import { useAuth } from './context/Userauth';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Landing from './pages/Landing';
+import Grid from './pages/Grid';
 import Navbar from "./components/NavigationBar";
 import About from "./pages/About";
 

@@ -1,4 +1,4 @@
-import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Circle, useMap, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { useEffect } from 'react';
@@ -24,9 +24,22 @@ type MapProps = {
     events: Event[]
     userLocation?: [number, number] | null
     activeEvent?: Event | null
+    isSelectingLocation?: boolean
+    onLocationSelect?: (lat: number, lng: number) => void
 }
 
 const MILE_TO_METERS = 1609.34;
+
+const LocationSelector = ({ isSelectingLocation, onLocationSelect }: { isSelectingLocation?: boolean, onLocationSelect?: (lat: number, lng: number) => void }) => {
+    useMapEvents({
+        click(e) {
+            if (isSelectingLocation && onLocationSelect) {
+                onLocationSelect(e.latlng.lat, e.latlng.lng);
+            }
+        },
+    })
+    return null
+}
 
 const userIcon = L.divIcon({
     className: '',
@@ -75,15 +88,16 @@ const MapController = ({ activeEvent }: { activeEvent?: Event | null }) => {
     return null;
 }
 
-const Map = ({ center, events, userLocation, activeEvent }: MapProps) => {
+const Map = ({ center, events, userLocation, activeEvent, isSelectingLocation, onLocationSelect }: MapProps) => {
     return (
-        <MapContainer center={center} zoom={13} scrollWheelZoom={true} className="h-full w-full">
+        <MapContainer center={center} zoom={13} scrollWheelZoom={true} className={`h-full w-full ${isSelectingLocation ? 'cursor-crosshair' : ''}`}>
             <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
 
             <MapController activeEvent={activeEvent} />
+            <LocationSelector isSelectingLocation={isSelectingLocation} onLocationSelect={onLocationSelect} />
 
             {userLocation && (
                 <>
