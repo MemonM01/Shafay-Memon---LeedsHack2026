@@ -1,10 +1,12 @@
+import { useState } from 'react';
 import Map from '../components/Map'
 import type { Event } from '../types/Events';
-
+import Sidebar from '../components/Sidebar';
 import useUserLocation from '../hooks/useUserLocation';
 
 const Landing = () => {
     const userLocation = useUserLocation();
+    const [activeEvent, setActiveEvent] = useState<Event | null>(null);
 
     const events: Event[] = [
         {
@@ -43,9 +45,24 @@ const Landing = () => {
     const center: [number, number] = userLocation ? [userLocation[0], userLocation[1]] : [53.8008, -1.5491];
 
     return (
-        <div className="h-screen w-full relative">
+        <div className="flex h-screen w-full bg-black overflow-hidden relative">
+            {/* Sidebar - Desktop */}
+            <div className="w-1/3 min-w-[400px] max-w-[500px] h-full z-30 relative shadow-2xl hidden md:block">
+                <Sidebar
+                    events={events}
+                    onEventClick={(event) => setActiveEvent(event)}
+                />
+            </div>
 
-            <Map center={center} events={events} userLocation={userLocation ? [userLocation[0], userLocation[1]] : null} />
+            {/* Map Area */}
+            <div className="flex-1 h-full relative z-10">
+                <Map
+                    center={center}
+                    events={events}
+                    userLocation={userLocation ? [userLocation[0], userLocation[1]] : null}
+                    activeEvent={activeEvent}
+                />
+            </div>
         </div>
     )
 }
