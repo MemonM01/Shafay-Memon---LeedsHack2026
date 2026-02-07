@@ -5,6 +5,7 @@ import Register from './pages/Register';
 import Landing from './pages/Landing';
 import Navbar from "./components/NavigationBar";
 import About from "./pages/About";
+import Grid from "./pages/Grid";
 
 import EventDetails from './pages/EventDetails';
 
