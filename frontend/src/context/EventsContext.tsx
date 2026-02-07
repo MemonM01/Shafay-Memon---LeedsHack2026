@@ -28,6 +28,30 @@ export function EventsProvider({ children }: { children: ReactNode }) {
             // Convert km to meters for the RPC function
             const radiusMeters = radius * 1000;
 
+            const fetchOwnerAvatars = async (ownerIds: string[]) => {
+                const uniqueOwnerIds = Array.from(new Set(ownerIds.filter(Boolean)));
+                if (uniqueOwnerIds.length === 0) return new Map<string, string>();
+
+                const { data: profiles, error: profilesError } = await supabase
+                    .from('profiles')
+                    .select('id, profile_picture_url')
+                    .in('id', uniqueOwnerIds);
+
+                if (profilesError) {
+                    console.error('Error fetching owner profiles:', profilesError);
+                    return new Map<string, string>();
+                }
+
+                const avatarMap = new Map<string, string>();
+                (profiles || []).forEach((p: any) => {
+                    if (p?.id && p?.profile_picture_url) {
+                        avatarMap.set(p.id, p.profile_picture_url);
+                    }
+                });
+
+                return avatarMap;
+            };
+
             const { data, error } = await supabase.rpc('get_events_with_interest', {
                 lat: userLocation[0],
                 lng: userLocation[1],
@@ -44,6 +68,10 @@ export function EventsProvider({ children }: { children: ReactNode }) {
                 if (allError) throw allError;
 
                 if (allEvents) {
+                    const ownerAvatarMap = await fetchOwnerAvatars(
+                        allEvents.map((e: any) => e.owner_id)
+                    );
+
                     const mappedEvents: Event[] = allEvents.map((e: any) => ({
                         id: e.id,
                         title: e.name,
@@ -53,6 +81,7 @@ export function EventsProvider({ children }: { children: ReactNode }) {
                         time: new Date(e.timestamp).toTimeString().substring(0, 5),
                         image: e.image_url || 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=800&q=80',
                         position: [e.latitude, e.longitude],
+                        ownerProfilePictureUrl: ownerAvatarMap.get(e.owner_id),
                         tags: e.tags || [],
                         interestCount: 0, // Fallback fields
                         isUserInterested: false
@@ -60,6 +89,10 @@ export function EventsProvider({ children }: { children: ReactNode }) {
                     setEvents(mappedEvents);
                 }
             } else if (data) {
+                const ownerAvatarMap = await fetchOwnerAvatars(
+                    data.map((e: any) => e.owner_id)
+                );
+
                 const mappedEvents: Event[] = data.map((e: any) => ({
                     id: e.id,
                     title: e.name,
@@ -70,6 +103,7 @@ export function EventsProvider({ children }: { children: ReactNode }) {
                     time: new Date(e.event_time).toTimeString().substring(0, 5),
                     image: e.image_url || 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=800&q=80',
                     position: [e.latitude, e.longitude],
+                    ownerProfilePictureUrl: ownerAvatarMap.get(e.owner_id),
                     tags: e.tags || [],
                     interestCount: e.interest_count,
                     isUserInterested: e.user_interested

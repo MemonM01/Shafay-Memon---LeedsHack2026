@@ -16,6 +16,7 @@ type EventRow = {
   timestamp: string | null;
   location: string | null;
   image_url: string | null;
+  owner_profile_picture_url?: string | null;
 };
 
 type AttendeeRow = {
@@ -40,6 +41,7 @@ function toAppEvent(e: EventRow): AppEvent {
     image:
       e.image_url ??
       "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=800&q=80",
+    ownerProfilePictureUrl: e.owner_profile_picture_url ?? undefined,
     tags: [], // you can load event_tags later if you want
   };
 }
@@ -103,13 +105,44 @@ export default function MyEvents() {
       if (goingError) console.error("goingError", goingError);
       if (hostedError) console.error("hostedError", hostedError);
 
+      const allOwnerIds = Array.from(
+        new Set(
+          [
+            ...(goingData as AttendeeRow[] | null)?.map((r) => r.events?.owner_id).filter(Boolean) ?? [],
+            ...(hostedData as EventRow[] | null)?.map((r) => r.owner_id).filter(Boolean) ?? [],
+          ] as string[]
+        )
+      );
+
+      const avatarMap = new Map<string, string>();
+      if (allOwnerIds.length > 0) {
+        const { data: profiles, error: profilesError } = await supabase
+          .from("profiles")
+          .select("id, profile_picture_url")
+          .in("id", allOwnerIds);
+
+        if (profilesError) console.error("profilesError", profilesError);
+
+        (profiles || []).forEach((p: any) => {
+          if (p?.id && p?.profile_picture_url) {
+            avatarMap.set(p.id, p.profile_picture_url);
+          }
+        });
+      }
+
       const goingEvents =
         (goingData as AttendeeRow[] | null)?.map((r) => r.events).filter(Boolean) as
         | EventRow[]
         | undefined;
 
-      setGoing(goingEvents ?? []);
-      setHosted((hostedData as EventRow[] | null) ?? []);
+      const attachAvatar = (rows: EventRow[]) =>
+        rows.map((row) => ({
+          ...row,
+          owner_profile_picture_url: avatarMap.get(row.owner_id) ?? null,
+        }));
+
+      setGoing(attachAvatar(goingEvents ?? []));
+      setHosted(attachAvatar((hostedData as EventRow[] | null) ?? []));
 
       setLoading(false);
     }

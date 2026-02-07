@@ -31,6 +31,7 @@ export default function EventSettings({ events, onFilterChange }: EventSettingsP
     const [isLoadingLocation, setIsLoadingLocation] = useState(false);
     const [suggestions, setSuggestions] = useState<any[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
+    const [isMinimized, setIsMinimized] = useState(false);
     const locationWrapperRef = useRef<HTMLDivElement>(null);
 
     // Get all unique tags from events
@@ -367,7 +368,7 @@ export default function EventSettings({ events, onFilterChange }: EventSettingsP
                             onChange={(e) => setMileRange(parseInt(e.target.value))}
                             className="w-full h-2 bg-zinc-700 rounded-lg appearance-none cursor-pointer slider"
                         />
-                        <div className="flex justify-between text-xs text-zinc-500 mt-1">
+                        <div className="flex justify-between s text-zinc-500 mt-1">
                             <span>1 mi</span>
                             <span>50 mi</span>
                         </div>

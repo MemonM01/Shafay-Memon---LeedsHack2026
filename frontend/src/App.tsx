@@ -9,6 +9,7 @@ import About from "./pages/About";
 import MyEvents from "./pages/MyEvents";
 import ProtectedRoute from './components/ProtectedRoute';
 import Profile from "./pages/Profile"
+import ProfileViewer from "./pages/ProfileViewer"
 import CreateButton from './components/CreateButton';
 
 
@@ -29,6 +30,7 @@ function App() {
               <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
               <Route path="/register" element={user ? <Navigate to="/" replace /> : <Register />} />
               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+              <Route path="/profile/:username" element={<ProfileViewer />} />
               <Route path="/event" element={<Grid />} />
               <Route path="/about" element={<About />} />
               <Route path="/events/:id" element={<EventDetails />} />
