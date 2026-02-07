@@ -2,8 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { useAuth } from './context/Userauth';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import Dashboard from './pages/Dashboard';
-import ProtectedRoute from './components/ProtectedRoute';
+import Landing from './pages/Landing';
 
 function App() {
   const { user } = useAuth();
@@ -11,17 +10,14 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <Login />} />
-        <Route path="/register" element={user ? <Navigate to="/dashboard" replace /> : <Register />} />
+        <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
+        <Route path="/register" element={user ? <Navigate to="/" replace /> : <Register />} />
         <Route
-          path="/dashboard"
+          path="/"
           element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
+            <Landing />
           }
         />
-        <Route path="/" element={<Navigate to={user ? "/dashboard" : "/login"} replace />} />
       </Routes>
     </Router>
   );
