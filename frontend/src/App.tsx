@@ -11,30 +11,34 @@ import Profile from "./pages/Profile"
 
 import EventDetails from './pages/EventDetails';
 
+import { EventsProvider } from './context/EventsContext';
+
 function App() {
   const { user } = useAuth();
 
   return (
     <Router>
-      <div className="h-screen flex flex-col">
-        <Navbar />
-        <div className="flex-1 min-h-0">
-          <Routes>
-            <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
-            <Route path="/register" element={user ? <Navigate to="/" replace /> : <Register />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/event" element={<Grid />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/events/:id" element={<EventDetails />} />
-            <Route
-              path="/"
-              element={
-                <Landing />
-              }
-            />
-          </Routes>
+      <EventsProvider>
+        <div className="h-screen flex flex-col">
+          <Navbar />
+          <div className="flex-1 min-h-0">
+            <Routes>
+              <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
+              <Route path="/register" element={user ? <Navigate to="/" replace /> : <Register />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/event" element={<Grid />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/events/:id" element={<EventDetails />} />
+              <Route
+                path="/"
+                element={
+                  <Landing />
+                }
+              />
+            </Routes>
+          </div>
         </div>
-      </div>
+      </EventsProvider>
     </Router>
   );
 }

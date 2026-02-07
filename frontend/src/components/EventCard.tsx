@@ -32,7 +32,15 @@ export default function EventCard({ event, onClick }: EventCardProps) {
           <span className="text-lg font-black">{event.date.split(' ')[1] || '15'}</span>
         </div>
 
-        {/* Category/Tag (Optional Placeholder) */}
+        {/* Interest Count Badge */}
+        {event.interestCount !== undefined && (
+          <div className="absolute top-3 right-20 z-20 flex items-center gap-1 rounded-full bg-blue-600/90 backdrop-blur-md px-3 py-1 text-white shadow-lg border border-white/10">
+            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"></path></svg>
+            <span className="text-xs font-bold">{event.interestCount}</span>
+          </div>
+        )}
+
+        {/* Category/Tag */}
         <div className="absolute top-3 left-3 z-20">
           <span className="rounded-lg bg-blue-600/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-lg backdrop-blur-sm">
             Event

@@ -8,4 +8,6 @@ export type Event = {
     image: string
     position: [number, number]
     tags?: string[]
+    interestCount?: number
+    isUserInterested?: boolean
 }
