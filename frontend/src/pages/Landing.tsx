@@ -159,6 +159,7 @@ const Landing = () => {
                     setPendingEventData(null);
                 }}
                 title="Create New Event"
+                size="lg" // Make modal larger for better layout
             >
                 <CreateEventForm
                     initialData={pendingEventData}
