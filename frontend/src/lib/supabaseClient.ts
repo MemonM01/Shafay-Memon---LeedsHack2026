@@ -16,7 +16,7 @@ export const supabase = createClient(
         auth: {
             persistSession: true,
             autoRefreshToken: true,
-            detectSessionInUrl: true // Required for PKCE flow (recovery, magic links, etc.)
+            detectSessionInUrl: true
         }
     }
 )
