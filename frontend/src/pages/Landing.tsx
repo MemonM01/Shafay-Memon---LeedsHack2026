@@ -7,47 +7,16 @@ import useUserLocation from '../hooks/useUserLocation';
 import Modal from '../components/Modal';
 import CreateEventForm from '../components/CreateEventForm';
 import { useAuth } from '../context/Userauth';
+import { supabase } from '../lib/supabaseClient';
 
 const Landing = () => {
     const userLocation = useUserLocation();
     const [activeEvent, setActiveEvent] = useState<Event | null>(null);
     const location = useLocation();
     const navigate = useNavigate();
-    const {user} = useAuth();
+    const { user } = useAuth();
     const events: Event[] = [
-        {
-            id: '1',
-            title: 'Tech Meetup Leeds',
-            description: 'Join us for an evening of networking and tech talks with industry leaders.',
-            location: 'Leeds City Museum',
-            date: 'FEB 15',
-            time: '18:00',
-            image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=800&q=80',
-            position: [53.7998, -1.5491],
-            tags: ['Networking', 'Tech']
-        },
-        {
-            id: '2',
-            title: 'Live Music Night',
-            description: 'Experience local bands performing live at the historic Corn Exchange.',
-            location: 'Corn Exchange',
-            date: 'MAR 02',
-            time: '20:00',
-            image: 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&w=800&q=80',
-            position: [53.7968, -1.5401],
-            tags: ['Music', 'Live']
-        },
-        {
-            title: 'Food Festival',
-            id: '3',
-            description: 'Taste the best street food Leeds has to offer. Family friendly event.',
-            location: 'Millennium Square',
-            date: 'APR 10',
-            time: '12:00',
-            image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=800&q=80',
-            position: [53.8016, -1.5493],
-            tags: ['Food', 'Family']
-        }
+
     ];
 
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -92,23 +61,84 @@ const Landing = () => {
         setIsCreateModalOpen(true);
     };
 
-    const handleFormSubmit = (data: any) => {
-        const newEvent: Event = {
-            id: Date.now().toString(),
-            title: data.title,
-            description: data.description,
-            date: data.date, // Format if needed
-            time: data.time,
-            location: data.location || locationName || 'Unknown Location',
-            position: data.position || pendingEventData?.position || userLocation || [53.8008, -1.5491],
-            image: data.image || 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=800&q=80', // Default image
-            tags: data.tags
-        };
+    const handleFormSubmit = async (data: any) => {
+        try {
+            if (!user) {
+                alert('You must be logged in to create an event.');
+                return;
+            }
 
-        setLocalEvents([...localEvents, newEvent]);
-        setIsCreateModalOpen(false);
-        setPendingEventData(null);
-        setLocationName('');
+            let imageUrl = data.image;
+
+            if (data.imageFile) {
+                const fileExt = data.imageFile.name.split('.').pop();
+                const fileName = `${Date.now()}.${fileExt}`;
+                const filePath = `${user.id}/${fileName}`;
+
+                // Check if file exists or handle 409
+                const { error: uploadError } = await supabase.storage
+                    .from('event-images')
+                    .upload(filePath, data.imageFile, {
+                        upsert: true // Overwrite if exists to avoid 409 on re-upload
+                    });
+
+                if (uploadError) {
+                    throw uploadError;
+                }
+
+                const { data: { publicUrl } } = supabase.storage
+                    .from('event-images')
+                    .getPublicUrl(filePath);
+
+                imageUrl = publicUrl;
+            }
+
+            const timestamp = new Date(`${data.date}T${data.time}:00`).toISOString();
+
+            const { data: eventData, error: dbError } = await supabase
+                .from('events')
+                .insert([
+                    {
+                        name: data.title,
+                        description: data.description,
+                        longitude: data.position[1],
+                        latitude: data.position[0],
+                        timestamp: timestamp,
+                        location: data.location,
+                        owner_id: user.id,
+                        image_url: imageUrl,
+                    }
+                ])
+                .select();
+
+            if (dbError) throw dbError;
+
+            const newEvent: Event = {
+                id: eventData?.[0]?.id || Date.now().toString(),
+                title: data.title,
+                description: data.description,
+                date: data.date,
+                time: data.time,
+                location: data.location || 'Unknown Location',
+                position: data.position || [53.8008, -1.5491],
+                image: imageUrl || 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=800&q=80',
+                tags: data.tags
+            };
+
+            setLocalEvents([...localEvents, newEvent]);
+            setIsCreateModalOpen(false);
+            setPendingEventData(null);
+            setLocationName('');
+        } catch (error: any) {
+            console.error('Error creating event:', error);
+            if (error.code === '23503') {
+                alert(`Database Error: Constraint Violation.\n\nThe "owner_id" likely references a user table where your ID doesn't exist.\n\nDetails: ${error.details || error.message}`);
+            } else if (error.message?.includes('409') || error.status === 409) {
+                alert('Conflict error: This resource likely already exists.');
+            } else {
+                alert(`Failed to create event: ${error.message || 'Unknown error'}`);
+            }
+        }
     };
 
     // Open create modal if navigated here with state.openCreate
@@ -173,6 +203,7 @@ const Landing = () => {
                     setPendingEventData(null);
                 }}
                 title="Create New Event"
+                size="lg" // Make modal larger for better layout
             >
                 <CreateEventForm
                     initialData={pendingEventData}
