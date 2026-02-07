@@ -17,13 +17,13 @@ export default function NavigationBar(){
         return (
                 <div className="flex items-center gap-3">
                 <button onClick={signOut} className="text-sky-200 text-sm md:text-base hover:text-white font-medium bg-transparent border-0 p-0 cursor-pointer">Sign Out</button>
-                <a href="/create" className="inline-flex items-center gap-2 bg-sky-500 hover:bg-sky-600 text-white px-3 py-1.5 rounded-md text-sm font-semibold transition-shadow shadow-sm hover:shadow-md">Create</a>
+                <a href="/" className="inline-flex items-center gap-2 bg-sky-500 hover:bg-sky-600 text-white px-3 py-1.5 rounded-md text-sm font-semibold transition-shadow shadow-sm hover:shadow-md">Create</a>
             </div>
         );
     }
 
     return (
-        <nav className="sticky top-0 z-50 bg-transparent border-b border-zinc-800 shadow-sm">
+        <nav className="sticky top-0 z-50 bg-black border-b border-zinc-800 shadow-sm">
             <div className="max-w-[1100px] mx-auto px-4 py-3 flex items-center relative">
                 <a href="/" className="flex items-center gap-3">
                     <img src={LinkUpLogo} alt="LinkUp" className="h-8 w-auto rounded-md" />
