@@ -6,13 +6,14 @@ import Sidebar from '../components/Sidebar';
 import useUserLocation from '../hooks/useUserLocation';
 import Modal from '../components/Modal';
 import CreateEventForm from '../components/CreateEventForm';
+import { useAuth } from '../context/Userauth';
 
 const Landing = () => {
     const userLocation = useUserLocation();
     const [activeEvent, setActiveEvent] = useState<Event | null>(null);
     const location = useLocation();
     const navigate = useNavigate();
-
+    const {user} = useAuth();
     const events: Event[] = [
         {
             id: '1',
@@ -121,6 +122,7 @@ const Landing = () => {
 
     // Default center if user location isn't available yet (Leeds)
     const center: [number, number] = userLocation ? [userLocation[0], userLocation[1]] : [53.8008, -1.5491];
+    
 
     return (
         <div className="flex h-full w-full bg-black overflow-hidden relative">
@@ -145,7 +147,7 @@ const Landing = () => {
                 />
 
                 {/* Create Event Button */}
-                {!isSelectingLocation && (
+                {!isSelectingLocation && user && (
                     <button
                         onClick={handleCreateEventClick}
                         className="absolute bottom-24 right-6 z-1000 bg-white text-black p-4 rounded-full shadow-lg hover:scale-110 transition-transform duration-200 group"

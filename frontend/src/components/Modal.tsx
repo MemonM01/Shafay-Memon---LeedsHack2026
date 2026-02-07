@@ -79,13 +79,13 @@ const Modal = ({
     if (!mounted) return null;
 
     const sizeClasses = {
-        xs: 'w-fit max-w-xs',
-        sm: 'w-fit max-w-sm',
-        md: 'w-fit max-w-md',
-        lg: 'w-fit max-w-lg',
-        xl: 'w-fit max-w-xl',
-        '2xl': 'w-fit max-w-2xl',
-        full: 'max-w-[calc(100%-2rem)] md:max-w-[calc(100%-4rem)] w-full h-[calc(100%-2rem)] md:h-[calc(100%-4rem)]',
+        xs: 'w-full max-w-xs max-h-[calc(100vh-2rem)]',
+        sm: 'w-full max-w-sm max-h-[calc(100vh-2rem)]',
+        md: 'w-full max-w-md max-h-[calc(100vh-2rem)]',
+        lg: 'w-full max-w-lg max-h-[calc(100vh-2rem)]',
+        xl: 'w-full max-w-xl max-h-[calc(100vh-2rem)]',
+        '2xl': 'w-full max-w-2xl max-h-[calc(100vh-2rem)]',
+        full: 'max-w-[calc(100%-2rem)] md:max-w-[calc(100%-4rem)] w-full h-[calc(100vh-2rem)] md:h-[calc(100vh-4rem)]',
     };
 
     return createPortal(
