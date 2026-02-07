@@ -3,6 +3,7 @@ import { useAuth } from './context/Userauth';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Landing from './pages/Landing';
+import Navbar from "./components/NavigationBar";
 
 import EventDetails from './pages/EventDetails';
 
@@ -11,6 +12,7 @@ function App() {
 
   return (
     <Router>
+      <Navbar />
       <Routes>
         <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
         <Route path="/register" element={user ? <Navigate to="/" replace /> : <Register />} />
