@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../context/Userauth';
+import { supabase } from '../lib/supabaseClient';
 
 export default function ProfileForm() {
     const { user } = useAuth();
@@ -22,13 +23,59 @@ export default function ProfileForm() {
         }));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        // TODO: Update user profile in Supabase
-        console.log('Saving profile:', formData);
-        setIsEditing(false);
-    };
+    const handleFormSubmit = async (data: any) => {
+        try {
+            if (!user) {
+                alert('You must be logged in to create an event.');
+                return;
+            }
 
+            let imageUrl = data.image;
+
+            if (data.imageFile) {
+                const fileExt = data.imageFile.name.split('.').pop();
+                const fileName = `${Date.now()}.${fileExt}`;
+                const filePath = `${user.id}/${fileName}`;
+
+                const { error: uploadError } = await supabase.storage
+                    .from('event-profile-pictures')
+                    .upload(filePath, data.imageFile, {
+                        upsert: true
+                    });
+
+                if (uploadError) {
+                    throw uploadError;
+                }
+
+                const { data: { publicUrl } } = supabase.storage
+                    .from('event-profile-pictures')
+                    .getPublicUrl(filePath);
+
+                imageUrl = publicUrl;
+            }
+
+            const { error: dbError } = await supabase
+                .from('profiles')
+                .insert([
+                    {
+                        profile_picture_url: imageUrl,
+                        username: data.username
+                    }
+                ]);
+
+            if (dbError) throw dbError;
+
+        } catch (error: any) {
+            console.error('Error creating event:', error);
+            if (error.code === '23503') {
+                alert(`Database Error: Constraint Violation.\n\nThe "owner_id" likely references a user table where your ID doesn't exist.\n\nDetails: ${error.details || error.message}`);
+            } else if (error.message?.includes('409') || error.status === 409) {
+                alert('Conflict error: This resource likely already exists.');
+            } else {
+                alert(`Failed to create event: ${error.message || 'Unknown error'}`);
+            }
+        }
+    };
     const handleProfilePictureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
@@ -78,7 +125,7 @@ export default function ProfileForm() {
                 )}
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleFormSubmit} className="space-y-6">
                 {/* Profile Picture */}
                 <div className="flex flex-col items-center gap-4">
                     <img

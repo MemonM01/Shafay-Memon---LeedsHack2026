@@ -92,7 +92,7 @@ export default function CreateButton() {
             {user && (
                 <button
                     onClick={handleCreateEventClick}
-                    className="fixed bottom-6 right-6 z-[1000] bg-white hover:opacity-100 opacity-90 text-black p-4 rounded-full shadow-lg hover:scale-110 transition-all duration-200 group"
+                    className="absolute bottom-3 right-6 z-1000 bg-white opacity-50 text-black p-4 rounded-full shadow-lg hover:scale-110 transition-transform duration-200 group"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 group-hover:rotate-90 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
