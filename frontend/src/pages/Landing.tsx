@@ -229,7 +229,7 @@ const Landing = () => {
             <div className="flex-1 h-full relative z-10">
                 <Map
                     center={center}
-                    events={activeTab === 'local' ? contextEvents : suggestedEvents}
+                    events={activeTab === 'local' ? localEvents : suggestedEvents}
                     userLocation={userLocation ? [userLocation[0], userLocation[1]] : null}
                     activeEvent={activeEvent}
                     isSelectingLocation={isSelectingLocation}

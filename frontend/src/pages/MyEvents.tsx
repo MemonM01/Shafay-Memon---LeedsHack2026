@@ -22,11 +22,6 @@ type EventRow = {
   owner_profile_picture_url?: string | null;
 };
 
-type AttendeeRow = {
-  joined_event_time: string;
-  events: EventRow | null;
-};
-
 function toAppEvent(e: EventRow): AppEvent {
   const dt = e.timestamp ? new Date(e.timestamp) : null;
 
