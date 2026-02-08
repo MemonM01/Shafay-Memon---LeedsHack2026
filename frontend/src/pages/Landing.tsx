@@ -107,7 +107,7 @@ const Landing = () => {
 
             const timestamp = new Date(`${data.date}T${data.time}:00`).toISOString();
 
-            const { error: dbError } = await supabase
+            const { data: newEvent, error: dbError } = await supabase
                 .from('events')
                 .insert([
                     {
@@ -120,9 +120,29 @@ const Landing = () => {
                         owner_id: user.id,
                         image_url: imageUrl,
                     }
-                ]);
+                ])
+                .select()
+                .single();
 
             if (dbError) throw dbError;
+
+            // Save Tags
+            if (data.tags && data.tags.length > 0 && newEvent) {
+                const tagsToInsert = data.tags.map((tag: string) => ({
+                    event_id: newEvent.id,
+                    tag_name: tag.toLowerCase().trim()
+                }));
+
+                const { error: tagsError } = await supabase
+                    .from('event_tags')
+                    .insert(tagsToInsert);
+
+                if (tagsError) {
+                    console.error('Error saving event tags:', tagsError);
+                    // We don't necessarily want to fail the whole event creation if tags fail,
+                    // but we should log it.
+                }
+            }
 
             // Refresh events from context
             fetchEvents();
