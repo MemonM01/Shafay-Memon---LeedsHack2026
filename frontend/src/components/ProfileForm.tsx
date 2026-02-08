@@ -147,7 +147,6 @@ export default function ProfileForm() {
             await refreshProfile();
 
             setIsEditing(false);
-            alert('Profile updated successfully!');
         } catch (error: any) {
             console.error('Error updating profile:', error);
             alert(`Failed to update profile: ${error.message}`);
