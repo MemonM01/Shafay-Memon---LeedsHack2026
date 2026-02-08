@@ -1,4 +1,25 @@
-import React, { useState, useRef } from 'react';
+/// <reference types="@types/google.maps" />
+import React, { useState, useRef, useEffect } from 'react';
+import { setOptions, importLibrary } from '@googlemaps/js-api-loader';
+
+// Google Maps API Key
+const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'YOUR_API_KEY_HERE';
+
+// Set Google Maps API options
+setOptions({
+    key: GOOGLE_MAPS_API_KEY,
+    v: 'weekly'
+});
+
+// Debounce hook
+function useDebounce<T>(value: T, delay: number): T {
+    const [debouncedValue, setDebouncedValue] = useState<T>(value);
+    useEffect(() => {
+        const handler = setTimeout(() => setDebouncedValue(value), delay);
+        return () => clearTimeout(handler);
+    }, [value, delay]);
+    return debouncedValue;
+}
 
 interface CreateEventFormProps {
     initialData: any; // Using any for now, will refine
@@ -18,22 +39,43 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({ initialData, onSubmit
     const [imagePreview, setImagePreview] = useState<string | null>(initialData?.image || null);
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [locationInput, setLocationInput] = useState(locationName || initialData?.location || '');
-    const [suggestions, setSuggestions] = useState<any[]>([]);
+    const [suggestions, setSuggestions] = useState<google.maps.places.AutocompletePrediction[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [geocodedPosition, setGeocodedPosition] = useState<[number, number] | null>(initialData?.position || null);
+    const [isSearching, setIsSearching] = useState(false);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const wrapperRef = useRef<HTMLDivElement>(null);
+    const autocompleteServiceRef = useRef<google.maps.places.AutocompleteService | null>(null);
+    const placesServiceRef = useRef<google.maps.places.PlacesService | null>(null);
+
+    const debouncedLocationInput = useDebounce(locationInput, 300);
+
+    // Initialize Google Maps services
+    useEffect(() => {
+        const initGoogleMaps = async () => {
+            try {
+                await importLibrary('places');
+                autocompleteServiceRef.current = new google.maps.places.AutocompleteService();
+                const div = document.createElement('div');
+                placesServiceRef.current = new google.maps.places.PlacesService(div);
+                console.log('Google Maps services initialized in CreateEventForm');
+            } catch (error) {
+                console.error('Error loading Google Maps:', error);
+            }
+        };
+        initGoogleMaps();
+    }, []);
 
     // Sync prop with local state if it changes externally
-    React.useEffect(() => {
+    useEffect(() => {
         if (locationName) {
             setLocationInput(locationName);
         }
     }, [locationName]);
 
     // Close suggestions when clicking outside
-    React.useEffect(() => {
+    useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
             if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
                 setShowSuggestions(false);
@@ -45,29 +87,86 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({ initialData, onSubmit
         };
     }, [wrapperRef]);
 
-    const handleLocationChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Debounced autocomplete search using Google Places API
+    useEffect(() => {
+        const fetchSuggestions = async () => {
+            if (debouncedLocationInput.length > 2 && autocompleteServiceRef.current) {
+                setIsSearching(true);
+                try {
+                    autocompleteServiceRef.current.getPlacePredictions(
+                        {
+                            input: debouncedLocationInput,
+                            componentRestrictions: { country: 'uk' },
+                        },
+                        (predictions: google.maps.places.AutocompletePrediction[] | null, status: google.maps.places.PlacesServiceStatus) => {
+                            setIsSearching(false);
+                            if (status === google.maps.places.PlacesServiceStatus.OK && predictions) {
+                                setSuggestions(predictions);
+                                setShowSuggestions(true);
+                            } else {
+                                setSuggestions([]);
+                                setShowSuggestions(false);
+                            }
+                        }
+                    );
+                } catch (error) {
+                    console.error('Autocomplete failed', error);
+                    setSuggestions([]);
+                    setShowSuggestions(false);
+                    setIsSearching(false);
+                }
+            } else {
+                setSuggestions([]);
+                setShowSuggestions(false);
+            }
+        };
+        fetchSuggestions();
+    }, [debouncedLocationInput]);
+
+    const handleLocationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
         setLocationInput(value);
-
-        if (value.length > 2) {
-            try {
-                const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(value)}&limit=5`);
-                const data = await response.json();
-                setSuggestions(data);
-                setShowSuggestions(true);
-            } catch (error) {
-                console.error("Autocomplete failed", error);
-            }
-        } else {
-            setSuggestions([]);
-            setShowSuggestions(false);
-        }
+        // Autocomplete is handled by the debounced useEffect
     };
 
-    const selectSuggestion = (suggestion: any) => {
-        setLocationInput(suggestion.display_name.split(',')[0]);
-        setGeocodedPosition([parseFloat(suggestion.lat), parseFloat(suggestion.lon)]);
+    const selectSuggestion = async (suggestion: google.maps.places.AutocompletePrediction) => {
+        setLocationInput(suggestion.description);
         setShowSuggestions(false);
+        setIsSearching(true);
+
+        if (!placesServiceRef.current) {
+            console.error('Places service not initialized');
+            setIsSearching(false);
+            return;
+        }
+
+        try {
+            placesServiceRef.current.getDetails(
+                {
+                    placeId: suggestion.place_id,
+                    fields: ['geometry', 'formatted_address']
+                },
+                (place: google.maps.places.PlaceResult | null, status: google.maps.places.PlacesServiceStatus) => {
+                    if (status === google.maps.places.PlacesServiceStatus.OK && place && place.geometry?.location) {
+                        const coords: [number, number] = [
+                            place.geometry.location.lat(),
+                            place.geometry.location.lng()
+                        ];
+                        setGeocodedPosition(coords);
+                        setLocationInput(place.formatted_address || suggestion.description);
+                        console.log('Location set to:', coords);
+                    } else {
+                        console.error('Failed to get place details:', status);
+                    }
+                    setSuggestions([]);
+                    setIsSearching(false);
+                }
+            );
+        } catch (error) {
+            console.error('Error fetching place details:', error);
+            setSuggestions([]);
+            setIsSearching(false);
+        }
     };
 
     const handleTagKeyDown = (e: React.KeyboardEvent) => {
@@ -203,13 +302,19 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({ initialData, onSubmit
                         />
                         {showSuggestions && suggestions.length > 0 && (
                             <ul className="absolute z-50 w-full bg-zinc-800 border border-zinc-700 rounded-lg mt-1 shadow-lg max-h-48 overflow-y-auto">
-                                {suggestions.map((suggestion, index) => (
+                                {isSearching && (
+                                    <li className="px-3 py-2 text-xs text-zinc-500 flex items-center gap-2">
+                                        <span className="animate-spin">⏳</span> Searching...
+                                    </li>
+                                )}
+                                {suggestions.map((suggestion) => (
                                     <li
-                                        key={index}
+                                        key={suggestion.place_id}
                                         onClick={() => selectSuggestion(suggestion)}
-                                        className="px-3 py-2 hover:bg-zinc-700 cursor-pointer text-sm text-zinc-300"
+                                        className="px-3 py-2 hover:bg-zinc-700 cursor-pointer text-sm text-zinc-300 border-b border-zinc-700/50 last:border-0 flex items-start gap-2"
                                     >
-                                        {suggestion.display_name}
+                                        <span className="text-blue-400 mt-0.5">📍</span>
+                                        <span className="line-clamp-2">{suggestion.description}</span>
                                     </li>
                                 ))}
                             </ul>
