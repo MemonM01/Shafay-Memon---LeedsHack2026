@@ -12,12 +12,13 @@ interface ProfileStats {
     eventsHosted: number;
     eventsAttending: number;
     tags: string[];
+    bio: string | null;
 }
 
 export default function Profile(){
-    const { user, loading: authLoading, profile } = useAuth();
+    const { user, loading: authLoading } = useAuth();
     const navigate = useNavigate();
-    const [stats, setStats] = useState<ProfileStats>({ eventsHosted: 0, eventsAttending: 0, tags: [] });
+    const [stats, setStats] = useState<ProfileStats>({ eventsHosted: 0, eventsAttending: 0, tags: [], bio: null });
     const [hostedEvents, setHostedEvents] = useState<Event[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -36,6 +37,7 @@ export default function Profile(){
                 const { data: profileData, error: profileError } = await supabase
                     .from('profiles')
                     .select(`
+                        bio,
                         profile_picture_url,
                         profile_tags (
                             tag_name
@@ -118,7 +120,8 @@ export default function Profile(){
                 setStats({
                     eventsHosted: hostedCount || 0,
                     eventsAttending: attendingCount || 0,
-                    tags: tags
+                    tags: tags,
+                    bio: profileData?.bio || null
                 });
             } catch (error) {
                 console.error('Error fetching profile stats:', error);
@@ -182,6 +185,16 @@ export default function Profile(){
                         <p className="text-sm text-zinc-400 mt-1">Events Attending</p>
                     </div>
                 </div>
+
+                {/* Bio Section */}
+                {stats.bio && (
+                    <div className="bg-zinc-900/50 backdrop-blur-sm border border-zinc-800 rounded-3xl p-8 mb-12">
+                        <h2 className="text-2xl font-bold mb-4">About</h2>
+                        <p className="text-zinc-300 whitespace-pre-wrap leading-relaxed">
+                            {stats.bio}
+                        </p>
+                    </div>
+                )}
 
                 {/* Interests/Tags Section */}
                 <div className="bg-zinc-900/50 backdrop-blur-sm border border-zinc-800 rounded-3xl p-8 mb-12">

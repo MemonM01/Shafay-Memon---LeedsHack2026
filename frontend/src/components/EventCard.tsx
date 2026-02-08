@@ -13,7 +13,7 @@ export default function EventCard({ event, onClick }: EventCardProps) {
   return (
     <div
       onClick={onClick}
-      className="group relative w-full overflow-hidden rounded-2xl bg-zinc-950 border border-zinc-800 shadow-2xl transition-all duration-300 hover:shadow-zinc-900/50 hover:border-zinc-700 cursor-pointer"
+      className="group relative w-full flex flex-col h-[450px] overflow-hidden rounded-2xl bg-zinc-950 border border-zinc-800 shadow-2xl transition-all duration-300 hover:shadow-zinc-900/50 hover:border-zinc-700 cursor-pointer"
     >
       {/* Image Container */}
       <div className="relative h-48 w-full overflow-hidden">
@@ -55,7 +55,7 @@ export default function EventCard({ event, onClick }: EventCardProps) {
       </div>
 
       {/* Content */}
-      <div className="relative p-5">
+      <div className="flex flex-col flex-1 p-5">
         <div className="mb-3 flex items-start justify-between">
           <div>
             <h3 className="line-clamp-1 text-xl font-bold text-white group-hover:text-blue-400 transition-colors">
@@ -71,12 +71,12 @@ export default function EventCard({ event, onClick }: EventCardProps) {
           </div>
         </div>
 
-        <p className="mb-4 line-clamp-2 text-sm text-zinc-500 leading-relaxed">
+        <p className="line-clamp-2 text-sm text-zinc-500 leading-relaxed flex-1">
           {event.description}
         </p>
 
-        <div className="flex items-center justify-between border-t border-zinc-800 pt-4">
-          <div className="flex items-center gap-2 text-zinc-300">
+        <div className="flex items-center justify-between border-t border-zinc-800 pt-4 mt-auto">
+          <div className="flex items-end gap-2 text-zinc-300">
             <svg className="h-4 w-4 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>

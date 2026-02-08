@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Map from '../components/Map'
 import type { Event } from '../types/Events';
@@ -9,6 +9,7 @@ import CreateEventForm from '../components/CreateEventForm';
 import { useAuth } from '../context/Userauth';
 import { supabase } from '../lib/supabaseClient';
 import { useEvents } from '../context/EventsContext';
+import { calculateDistance, DEFAULT_SEARCH_RADIUS_KM } from '../lib/geoUtils';
 
 const Landing = () => {
     // Consume global events context
@@ -29,7 +30,20 @@ const Landing = () => {
     const [pendingEventData, setPendingEventData] = useState<any>(null);
     const [locationName, setLocationName] = useState<string>('');
 
+    // Default center if user location isn't available yet (Leeds)
+    const center: [number, number] = userLocation ? [userLocation[0], userLocation[1]] : [53.8008, -1.5491];
+
+    // Filter events for the sidebar to only show those within the blue circle
+    const localEvents = useMemo(() => {
+        return contextEvents.filter(event => {
+            if (!event.position) return false;
+            const distance = calculateDistance(center[0], center[1], event.position[0], event.position[1], 'km');
+            return distance <= DEFAULT_SEARCH_RADIUS_KM;
+        });
+    }, [contextEvents, center]);
+
     const handleLocationSelectRequest = (data: any) => {
+
         setPendingEventData(data);
         setIsCreateModalOpen(false);
         setIsSelectingLocation(true);
@@ -93,7 +107,7 @@ const Landing = () => {
 
             const timestamp = new Date(`${data.date}T${data.time}:00`).toISOString();
 
-            const { error: dbError } = await supabase
+            const { data: newEvent, error: dbError } = await supabase
                 .from('events')
                 .insert([
                     {
@@ -106,9 +120,29 @@ const Landing = () => {
                         owner_id: user.id,
                         image_url: imageUrl,
                     }
-                ]);
+                ])
+                .select()
+                .single();
 
             if (dbError) throw dbError;
+
+            // Save Tags
+            if (data.tags && data.tags.length > 0 && newEvent) {
+                const tagsToInsert = data.tags.map((tag: string) => ({
+                    event_id: newEvent.id,
+                    tag_name: tag.toLowerCase().trim()
+                }));
+
+                const { error: tagsError } = await supabase
+                    .from('event_tags')
+                    .insert(tagsToInsert);
+
+                if (tagsError) {
+                    console.error('Error saving event tags:', tagsError);
+                    // We don't necessarily want to fail the whole event creation if tags fail,
+                    // but we should log it.
+                }
+            }
 
             // Refresh events from context
             fetchEvents();
@@ -137,16 +171,14 @@ const Landing = () => {
         }
     }, [location, navigate]);
 
-    // Default center if user location isn't available yet (Leeds)
-    const center: [number, number] = userLocation ? [userLocation[0], userLocation[1]] : [53.8008, -1.5491];
-    
+
 
     return (
         <div className="flex h-full w-full bg-black overflow-hidden relative">
             {/* Sidebar - Desktop */}
             <div className="w-1/3 min-w-[400px] max-w-[500px] h-full z-30 relative shadow-2xl hidden md:block">
                 <Sidebar
-                    events={contextEvents}
+                    events={localEvents}
                     onEventClick={(event) => setActiveEvent(event)}
                 />
             </div>
@@ -163,7 +195,7 @@ const Landing = () => {
                     pendingLocation={pendingEventData?.position}
                 />
 
-                
+
                 {/* Location Selection Hint */}
                 {isSelectingLocation && (
                     <div className="absolute top-6 left-1/2 -translate-x-1/2 z-1000 bg-black/80 text-white px-6 py-3 rounded-full backdrop-blur-md border border-white/20 shadow-xl animate-bounce">
