@@ -32,7 +32,7 @@ export default function NavigationBar() {
     }
 
     return (
-        <nav className="fixed top-0 left-0 right-0 z-50 bg-black border-b border-zinc-800 shadow-sm">
+        <nav className="sticky top-0 z-50 bg-black border-b border-zinc-800 shadow-sm">
             <div className="max-w-[1100px] mx-auto px-4 py-3 flex items-center relative">
                 <a href="/" className="flex items-center gap-3">
                     <img src={LinkUpLogo} alt="LinkUp" className="h-8 w-auto rounded-md" />
