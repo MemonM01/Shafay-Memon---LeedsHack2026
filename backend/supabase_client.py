@@ -1,12 +1,10 @@
-from fastapi import FastAPI
+from supabase import create_client, Client
 import os
 from dotenv import load_dotenv
-from routes.events import router as events_router
 
 load_dotenv()
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY")
 
-app = FastAPI()
-app.include_router(events_router)
+supabaseDB: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
