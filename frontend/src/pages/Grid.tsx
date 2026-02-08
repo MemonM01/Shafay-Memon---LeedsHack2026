@@ -27,7 +27,7 @@ export default function Grid() {
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto">
         <div className="px-4 py-8">
-          <div className="max-w-[1100px] mx-auto">
+          <div className="mx-auto">
             {loading ? (
               <div className="flex items-center justify-center h-64 text-zinc-500">
                 Loading events nearby...
