@@ -14,6 +14,7 @@ export default function EventDetails() {
     const [interestCount, setInterestCount] = useState(0);
     const [isInterested, setIsInterested] = useState(false);
     const [countdown, setCountdown] = useState<string>("");
+    const [ownerUsername, setOwnerUsername] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchEvent = async () => {
@@ -40,6 +41,20 @@ export default function EventDetails() {
                 const tags = eventData.event_tags
                     ? eventData.event_tags.map((t: any) => t.tag_name)
                     : [];
+                
+                // Fetch owner profile picture and username
+                let ownerProfilePictureUrl: string | undefined;
+                let ownerName: string | null = null;
+                if (eventData.owner_id) {
+                    const { data: profileData } = await supabase
+                        .from('profiles')
+                        .select('profile_picture_url, username')
+                        .eq('id', eventData.owner_id)
+                        .single();
+                    
+                    ownerProfilePictureUrl = profileData?.profile_picture_url;
+                    ownerName = profileData?.username || null;
+                }
 
                 // Fetch interest count
                 const { count, error: countError } = await supabase
@@ -65,6 +80,7 @@ export default function EventDetails() {
                 }
 
                 if (eventData) {
+                    setOwnerUsername(ownerName);
                     setEvent({
                         id: eventData.id,
                         title: eventData.name, // Mapping 'name' to 'title'
@@ -74,7 +90,8 @@ export default function EventDetails() {
                         time: new Date(eventData.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                         image: eventData.image_url || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=800&q=80',
                         position: [eventData.latitude, eventData.longitude],
-                        tags: tags // Use processed tags
+                        tags: tags, // Use processed tags
+                        ownerProfilePictureUrl: ownerProfilePictureUrl
                     });
                 }
 
@@ -196,6 +213,21 @@ export default function EventDetails() {
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                     </svg>
+                </button>
+
+                {/* Owner Profile Picture - Top Right */}
+                <button
+                    onClick={() => ownerUsername && navigate(`/profile/${ownerUsername}`)}
+                    className="absolute top-6 right-6 z-20 h-14 w-14 rounded-full border-2 border-white/30 bg-zinc-900/60 backdrop-blur-md p-0.5 shadow-lg hover:border-white/60 transition-all cursor-pointer hover:shadow-xl"
+                >
+                    <img
+                        src={event.ownerProfilePictureUrl || "https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg"}
+                        alt="Event host"
+                        className="h-full w-full rounded-full object-cover"
+                        onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = "https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg";
+                        }}
+                    />
                 </button>
 
                 <div className="absolute bottom-0 left-0 p-8 md:p-12 w-full max-w-4xl">

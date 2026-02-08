@@ -8,6 +8,7 @@ type EventCardProps = {
 
 export default function EventCard({ event, onClick }: EventCardProps) {
   const fallback = "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1200&q=80";
+  const avatarFallback = "https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg";
   const date = new Date(event.date)
   return (
     <div
@@ -40,11 +41,16 @@ export default function EventCard({ event, onClick }: EventCardProps) {
           </div>
         )}
 
-        {/* Category/Tag */}
-        <div className="absolute top-3 left-3 z-20">
-          <span className="rounded-lg bg-blue-600/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-lg backdrop-blur-sm">
-            Event
-          </span>
+        {/* Owner Profile Picture */}
+        <div className="absolute top-3 left-3 z-20 h-11 w-11 rounded-full border border-white/30 bg-zinc-900/60 backdrop-blur-md p-0.5 shadow-lg">
+          <img
+            src={event.ownerProfilePictureUrl || avatarFallback}
+            alt="Event host"
+            className="h-full w-full rounded-full object-cover"
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).src = avatarFallback;
+            }}
+          />
         </div>
       </div>
 

@@ -7,6 +7,7 @@ export type Event = {
     time: string
     image: string
     position: [number, number]
+    ownerProfilePictureUrl?: string
     tags?: string[]
     interestCount?: number
     isUserInterested?: boolean
