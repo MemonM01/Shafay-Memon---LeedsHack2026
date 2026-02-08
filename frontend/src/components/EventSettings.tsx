@@ -16,9 +16,11 @@ function useDebounce<T>(value: T, delay: number): T {
 type EventSettingsProps = {
     events: Event[];
     onFilterChange?: (filteredEvents: Event[]) => void;
+    isOpen?: boolean;
+    onClose?: () => void;
 };
 
-export default function EventSettings({ events, onFilterChange }: EventSettingsProps) {
+export default function EventSettings({ events, onFilterChange, isOpen, onClose }: EventSettingsProps) {
     const [searchText, setSearchText] = useState('');
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
     const [tagInput, setTagInput] = useState('');
@@ -307,13 +309,38 @@ export default function EventSettings({ events, onFilterChange }: EventSettingsP
     return (
         <div className="h-full w-full bg-zinc-950 border-r border-zinc-800 flex flex-col overflow-hidden">
             {/* Header */}
-            <div className="p-6 border-b border-zinc-800 flex-shrink-0">
-                <h2 className="text-2xl font-black text-white uppercase tracking-tighter">
-                    Filters
-                </h2>
-                <p className="text-zinc-500 text-sm mt-1">
-                    Customize your search
-                </p>
+            <div className="p-6 border-b border-zinc-800 flex-shrink-0 flex items-center justify-between">
+                <div>
+                    <h2 className="text-2xl font-black text-white uppercase tracking-tighter">
+                        Filters
+                    </h2>
+                    <p className="text-zinc-500 text-sm mt-1">
+                        Customize your search
+                    </p>
+                </div>
+                {onClose && (
+                    <button
+                        onClick={onClose}
+                        className="p-2 hover:bg-zinc-800 rounded-md text-zinc-500 hover:text-white transition-colors md:hidden"
+                        title="Close filters"
+                    >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                )}
+                {/* Desktop close button */}
+                {onClose && (
+                    <button
+                        onClick={onClose}
+                        className="hidden md:block p-2 hover:bg-zinc-800 rounded-md text-zinc-500 hover:text-white transition-colors"
+                        title="Close filters"
+                    >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+                        </svg>
+                    </button>
+                )}
             </div>
 
             {/* Filters */}
@@ -431,101 +458,99 @@ export default function EventSettings({ events, onFilterChange }: EventSettingsP
                         <div className="flex justify-between text-xs text-zinc-500 mt-1">
                             <span>1 km</span>
                             <span>100 km</span>
-                            <div className="flex justify-between s text-zinc-500 mt-1">
-                                <span>1 mi</span>
-                                <span>50 mi</span>
-                            </div>
-                        </div>
-                )}
-
-                        {/* Date Range */}
-                        <div>
-                            <label className="block text-sm font-medium text-zinc-300 mb-2">Date Range</label>
-                            <div className="space-y-2">
-                                <input
-                                    type="date"
-                                    value={startDate}
-                                    onChange={(e) => setStartDate(e.target.value)}
-                                    className="w-full bg-zinc-800 border border-zinc-700 text-white px-3 py-2 rounded-md text-sm focus:outline-none focus:border-sky-500 transition"
-                                />
-                                <input
-                                    type="date"
-                                    value={endDate}
-                                    onChange={(e) => setEndDate(e.target.value)}
-                                    className="w-full bg-zinc-800 border border-zinc-700 text-white px-3 py-2 rounded-md text-sm focus:outline-none focus:border-sky-500 transition"
-                                />
-                            </div>
-                        </div>
-
-                        {/* Tags */}
-                        <div>
-                            <label className="block text-sm font-medium text-zinc-300 mb-2">Tags</label>
-
-                            {/* Selected Tags */}
-                            {selectedTags.length > 0 && (
-                                <div className="flex flex-wrap gap-2 mb-2">
-                                    {selectedTags.map(tag => (
-                                        <span key={tag} className="bg-sky-500/20 text-sky-300 text-xs px-2 py-1 rounded-full flex items-center gap-1">
-                                            {tag}
-                                            <button
-                                                type="button"
-                                                onClick={() => removeTag(tag)}
-                                                className="hover:text-white"
-                                            >
-                                                &times;
-                                            </button>
-                                        </span>
-                                    ))}
-                                </div>
-                            )}
-
-                            {/* Tag Input */}
-                            <input
-                                type="text"
-                                value={tagInput}
-                                onChange={(e) => setTagInput(e.target.value)}
-                                onKeyDown={handleTagKeyDown}
-                                placeholder="Type and press Enter to add tag"
-                                className="w-full bg-zinc-800 border border-zinc-700 text-white px-3 py-2 rounded-md text-sm focus:outline-none focus:border-sky-500 transition mb-3"
-                            />
-
-                            {/* Suggested Tags from Events */}
-                            {allTags.length > 0 && (
-                                <>
-                                    <p className="text-xs text-zinc-500 mb-2">Suggested tags:</p>
-                                    <div className="flex flex-wrap gap-2">
-                                        {allTags.map(tag => (
-                                            <button
-                                                key={tag}
-                                                onClick={() => handleTagToggle(tag)}
-                                                className={`text-xs px-2 py-1 rounded-full transition ${selectedTags.includes(tag)
-                                                    ? 'bg-sky-500 text-white'
-                                                    : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
-                                                    }`}
-                                            >
-                                                {tag}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </>
-                            )}
-                        </div>
-
-                        {/* Results Count */}
-                        <div className="pt-4 border-t border-zinc-800 text-xs text-zinc-400">
-                            {filteredEvents.length} event{filteredEvents.length !== 1 ? 's' : ''} found
                         </div>
                     </div>
+                )}
 
-            {/* Reset Button */}
-                <div className="p-4 border-t border-zinc-800 flex-shrink-0">
-                    <button
-                        onClick={resetFilters}
-                        className="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-3 py-2 rounded-md text-sm font-medium transition"
-                    >
-                        Reset Filters
-                    </button>
+                {/* Date Range */}
+                <div>
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">Date Range</label>
+                    <div className="space-y-2">
+                        <input
+                            type="date"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                            className="w-full bg-zinc-800 border border-zinc-700 text-white px-3 py-2 rounded-md text-sm focus:outline-none focus:border-sky-500 transition"
+                        />
+                        <input
+                            type="date"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                            className="w-full bg-zinc-800 border border-zinc-700 text-white px-3 py-2 rounded-md text-sm focus:outline-none focus:border-sky-500 transition"
+                        />
+                    </div>
+                </div>
+
+                {/* Tags */}
+                <div>
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">Tags</label>
+
+                    {/* Selected Tags */}
+                    {selectedTags.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mb-2">
+                            {selectedTags.map(tag => (
+                                <span key={tag} className="bg-sky-500/20 text-sky-300 text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                                    {tag}
+                                    <button
+                                        type="button"
+                                        onClick={() => removeTag(tag)}
+                                        className="hover:text-white"
+                                    >
+                                        &times;
+                                    </button>
+                                </span>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Tag Input */}
+                    <input
+                        type="text"
+                        value={tagInput}
+                        onChange={(e) => setTagInput(e.target.value)}
+                        onKeyDown={handleTagKeyDown}
+                        placeholder="Type and press Enter to add tag"
+                        className="w-full bg-zinc-800 border border-zinc-700 text-white px-3 py-2 rounded-md text-sm focus:outline-none focus:border-sky-500 transition mb-3"
+                    />
+
+                    {/* Suggested Tags from Events */}
+                    {allTags.length > 0 && (
+                        <>
+                            <p className="text-xs text-zinc-500 mb-2">Suggested tags:</p>
+                            <div className="flex flex-wrap gap-2">
+                                {allTags.map(tag => (
+                                    <button
+                                        key={tag}
+                                        onClick={() => handleTagToggle(tag)}
+                                        className={`text-xs px-2 py-1 rounded-full transition ${selectedTags.includes(tag)
+                                            ? 'bg-sky-500 text-white'
+                                            : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                                            }`}
+                                    >
+                                        {tag}
+                                    </button>
+                                ))}
+                            </div>
+                        </>
+                    )}
+                </div>
+
+                {/* Results Count */}
+                <div className="pt-4 border-t border-zinc-800 text-xs text-zinc-400">
+                    {filteredEvents.length} event{filteredEvents.length !== 1 ? 's' : ''} found
                 </div>
             </div>
-            );
+
+            {/* Reset Button */}
+            <div className="p-4 border-t border-zinc-800 flex-shrink-0">
+                <button
+                    onClick={resetFilters}
+                    className="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-3 py-2 rounded-md text-sm font-medium transition"
+                >
+                    Reset Filters
+                </button>
+            </div>
+        </div>
+    );
 }
+
