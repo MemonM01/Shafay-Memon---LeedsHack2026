@@ -19,12 +19,20 @@ export default function EventChat({ eventId }: { eventId: string }) {
     const [newMessage, setNewMessage] = useState('');
     const [loading, setLoading] = useState(true);
     const scrollRef = useRef<HTMLDivElement>(null);
+    const prevMessagesLengthRef = useRef(0);
 
-    // Scroll to bottom when messages change
+    // Scroll to bottom only when new messages are added AND user is near bottom
     useEffect(() => {
-        if (scrollRef.current) {
-            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        if (scrollRef.current && messages.length > prevMessagesLengthRef.current) {
+            const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+            const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+            
+            // Only auto-scroll if user is already near the bottom
+            if (isNearBottom || prevMessagesLengthRef.current === 0) {
+                scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+            }
         }
+        prevMessagesLengthRef.current = messages.length;
     }, [messages]);
 
     useEffect(() => {

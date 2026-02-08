@@ -301,7 +301,7 @@ export default function EventDetails() {
 
                 <div className="md:col-span-1 space-y-6">
                     {/* Action Card */}
-                    <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 shadow-2xl sticky top-8">
+                    <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 shadow-2xl top-8">
                         <div className="space-y-4 mb-6">
                             <div className="flex items-center justify-between p-3 bg-black/40 rounded-xl border border-zinc-800">
                                 <span className="text-zinc-500 text-sm font-bold">DATE</span>
