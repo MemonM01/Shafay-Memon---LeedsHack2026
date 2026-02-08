@@ -174,7 +174,7 @@ export default function ProfileForm() {
     const handleTagKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter') {
             e.preventDefault();
-            const newTag = tagInput.trim();
+            const newTag = tagInput.trim().toLowerCase();
             if (newTag && formData.tags.length < 8 && !formData.tags.includes(newTag)) {
                 setFormData(prev => ({
                     ...prev,

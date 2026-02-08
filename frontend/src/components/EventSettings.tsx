@@ -146,7 +146,7 @@ export default function EventSettings({ events, onFilterChange, isOpen, onClose 
     const handleTagKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter') {
             e.preventDefault();
-            const newTag = tagInput.trim();
+            const newTag = tagInput.trim().toLowerCase();
             if (newTag && !selectedTags.includes(newTag)) {
                 setSelectedTags(prev => [...prev, newTag]);
                 setTagInput('');
@@ -420,7 +420,7 @@ export default function EventSettings({ events, onFilterChange, isOpen, onClose 
                                 className="bg-sky-600 hover:bg-sky-500 text-white px-3 py-2 rounded-md text-sm transition disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-zinc-800"
                                 title="Search"
                             >
-                                {isLoadingLocation ? '⏳' : '🔍'}
+                                {isLoadingLocation ? 'loading...' : '🔍'}
                             </button>
                         </div>
                         {/* Current location indicator */}
@@ -436,7 +436,7 @@ export default function EventSettings({ events, onFilterChange, isOpen, onClose 
                             disabled={isLoadingLocation}
                             className="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-3 py-2 rounded-md text-sm transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {isLoadingLocation ? '⏳ Getting location...' : '📍 Use Current Location'}
+                            {isLoadingLocation ? 'Getting location...' : 'Use Current Location'}
                         </button>
                     </div>
                 </div>

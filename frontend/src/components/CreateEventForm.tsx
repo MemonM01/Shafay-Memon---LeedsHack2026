@@ -72,7 +72,7 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({ initialData, onSubmit
     const handleTagKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter') {
             e.preventDefault();
-            const newTag = tagInput.trim();
+            const newTag = tagInput.trim().toLowerCase();
             if (newTag && tags.length < 8 && !tags.includes(newTag)) {
                 setTags([...tags, newTag]);
                 setTagInput('');
