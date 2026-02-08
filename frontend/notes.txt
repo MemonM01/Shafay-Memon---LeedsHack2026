@@ -1,0 +1,17 @@
+In backend: .env:
+SUPABASE_URL=https://pcgxomtyakzrpggsxgzw.supabase.co/
+SUPABASE_SERVICE_KEY=sb_secret_W1ybhvCJib8Q5pl6AZJ4Kw_OKKgZ5Y-
+
+
+in frontend: .env:
+VITE_SUPABASE_URL=https://pcgxomtyakzrpggsxgzw.supabase.co/
+VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_Wp4Y9NRjK8MHwIBvzc6ioA_l7x_UVsP
+
+to run backend: 
+python -m uvicorn main:app --reload --port 8001
+
+to run frontend: 
+npm run dev
+
+link to database: 
+https://supabase.com/dashboard/project/pcgxomtyakzrpggsxgzw
