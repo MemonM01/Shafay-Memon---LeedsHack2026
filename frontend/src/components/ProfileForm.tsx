@@ -10,12 +10,12 @@ export default function ProfileForm() {
     const [loading, setLoading] = useState(true);
     const [formData, setFormData] = useState({
         username: '',
+        bio: '',
         tags: [] as string[],
         profilePicture: 'https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg'
     });
 
     useEffect(() => {
-        // Load from cache first for instant UI
         const cachedProfile = localStorage.getItem(`profile_${user?.id}`);
         if (cachedProfile) {
             try {
@@ -28,16 +28,15 @@ export default function ProfileForm() {
 
         async function fetchProfile() {
             if (!user) return;
-            // Only show loader if we don't have cached data
             if (!localStorage.getItem(`profile_${user.id}`)) {
                 setLoading(true);
             }
             try {
-                // Fetch profile and tags
                 const { data: profileData, error: profileError } = await supabase
                     .from('profiles')
                     .select(`
                         username,
+                        bio,
                         profile_picture_url,
                         profile_tags (
                             tag_name
@@ -55,12 +54,12 @@ export default function ProfileForm() {
 
                     const newProfile = {
                         username: profileData.username || '',
+                        bio: profileData.bio || '',
                         tags: tags,
                         profilePicture: profileData.profile_picture_url || 'https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg'
                     };
 
                     setFormData(newProfile);
-                    // Update cache
                     localStorage.setItem(`profile_${user.id}`, JSON.stringify(newProfile));
                 }
             } catch (err) {
@@ -72,7 +71,7 @@ export default function ProfileForm() {
         fetchProfile();
     }, [user]);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({
             ...prev,
@@ -106,19 +105,17 @@ export default function ProfileForm() {
                 profilePictureUrl = publicUrl;
             }
 
-            // 1. Update Profile
             const { error: profileError } = await supabase
                 .from('profiles')
                 .upsert({
                     id: user.id,
                     username: formData.username,
+                    bio: formData.bio,
                     profile_picture_url: profilePictureUrl,
                 });
 
             if (profileError) throw profileError;
 
-            // 2. Sync Tags
-            // Delete existing
             const { error: deleteError } = await supabase
                 .from('profile_tags')
                 .delete()
@@ -126,7 +123,6 @@ export default function ProfileForm() {
 
             if (deleteError) throw deleteError;
 
-            // Insert new
             if (formData.tags.length > 0) {
                 const tagsToInsert = formData.tags.map(tag => ({
                     profile_id: user.id,
@@ -145,11 +141,9 @@ export default function ProfileForm() {
                 profilePicture: profilePictureUrl
             };
 
-            // Update local state and cache
             setFormData(finalProfile);
             localStorage.setItem(`profile_${user.id}`, JSON.stringify(finalProfile));
 
-            // Trigger refresh in AuthContext
             await refreshProfile();
 
             setIsEditing(false);
@@ -222,15 +216,13 @@ export default function ProfileForm() {
             </div>
 
             <form onSubmit={handleFormSubmit} className="space-y-6">
-                {/* Profile Picture */}
                 <div className="flex flex-col items-center gap-4">
                     <div className="relative group">
                         <img
                             src={formData.profilePicture}
                             alt="Profile"
-                            key={formData.profilePicture} // Force re-render on URL change
+                            key={formData.profilePicture}
                             onError={(e) => {
-                                // Fallback to default if image fails to load
                                 (e.target as HTMLImageElement).src = 'https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg';
                             }}
                             className="h-32 w-32 rounded-full object-cover border-4 border-sky-500 shadow-xl"
@@ -275,7 +267,26 @@ export default function ProfileForm() {
                     <p className="text-zinc-400">{user?.email || 'Not provided'}</p>
                 </div>
 
-                {/* Tags Field */}
+                <div>
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">Bio</label>
+                    {isEditing ? (
+                        <>
+                            <textarea
+                                name="bio"
+                                value={formData.bio}
+                                onChange={handleChange}
+                                rows={4}
+                                className="w-full bg-zinc-800 border border-zinc-700 text-white px-4 py-2 rounded-md focus:outline-none focus:border-sky-500 transition resize-none"
+                                placeholder="Tell us about yourself..."
+                                maxLength={500}
+                            />
+                            <p className="text-xs text-zinc-500 mt-1">{formData.bio?.length || 0}/500 characters</p>
+                        </>
+                    ) : (
+                        <p className="text-white whitespace-pre-wrap">{formData.bio || 'No bio added'}</p>
+                    )}
+                </div>
+
                 <div>
                     <label className="block text-sm font-medium text-zinc-300 mb-2">
                         Tags <span className="text-zinc-500 text-xs">({formData.tags.length}/8)</span>
@@ -321,8 +332,6 @@ export default function ProfileForm() {
                     )}
                 </div>
 
-
-                {/* Form Actions */}
                 {isEditing && (
                     <div className="flex gap-3 pt-4">
                         <button

@@ -7,6 +7,7 @@ import type { Event } from '../types/Events';
 
 interface ProfileData {
     username: string | null;
+    bio: string | null;
     profile_picture_url: string | null;
     email: string | null;
     tags: string[];
@@ -63,6 +64,7 @@ export default function ProfileViewer() {
                     .from('profiles')
                     .select(`
                         username,
+                        bio,
                         profile_picture_url,
                         profile_tags (
                             tag_name
@@ -150,6 +152,7 @@ export default function ProfileViewer() {
 
                 setProfileData({
                     username: profileInfo?.username || 'User',
+                    bio: profileInfo?.bio || null,
                     profile_picture_url: profileInfo?.profile_picture_url || DEFAULT_AVATAR,
                     email: paramUsername ? null : user?.email || null,
                     tags: tags,
@@ -207,8 +210,8 @@ export default function ProfileViewer() {
                         <div className="relative">
                             <div className="h-40 w-40 rounded-2xl border-2 border-zinc-700 bg-zinc-900/50 p-1 shadow-2xl overflow-hidden">
                                 <img
-                                    src={profileData.profile_picture_url}
-                                    alt={profileData.username}
+                                    src={profileData.profile_picture_url || DEFAULT_AVATAR}
+                                    alt={profileData.username || 'User'}
                                     className="h-full w-full rounded-xl object-cover"
                                     onError={(e) => {
                                         (e.currentTarget as HTMLImageElement).src = DEFAULT_AVATAR;
@@ -225,13 +228,6 @@ export default function ProfileViewer() {
                             <h1 className="text-4xl md:text-5xl font-black mb-2">
                                 {profileData.username}
                             </h1>
-                            <p className="text-zinc-400 flex items-center gap-2">
-                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"></path>
-                                    <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"></path>
-                                </svg>
-                                {profileData.email}
-                            </p>
                         </div>
 
                         {/* Stats Grid */}
@@ -261,6 +257,16 @@ export default function ProfileViewer() {
                         )}
                     </div>
                 </div>
+
+                {/* Bio Section */}
+                {profileData.bio && (
+                    <div className="bg-zinc-900/50 backdrop-blur-sm border border-zinc-800 rounded-3xl p-8 mb-8">
+                        <h2 className="text-2xl font-bold mb-4">About</h2>
+                        <p className="text-zinc-300 whitespace-pre-wrap leading-relaxed">
+                            {profileData.bio}
+                        </p>
+                    </div>
+                )}
 
                 {/* Interests/Tags Section */}
                 <div className="bg-zinc-900/50 backdrop-blur-sm border border-zinc-800 rounded-3xl p-8">
