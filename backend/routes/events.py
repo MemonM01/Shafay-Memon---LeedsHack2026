@@ -1,4 +1,4 @@
-from ai.embeddings import model, util
+from ai.embeddings import model, util, similarity
 from supabase_client import supabaseDB
 from fastapi import APIRouter
 import torch
@@ -95,3 +95,51 @@ def get_recommended_events(profile_id: str):
     # Sort by score descending
     recommended.sort(key=lambda x: x["score"], reverse=True)
     return {"events": recommended[:10]}
+
+@router.post("/{event_id}/register/{profile_id}")
+def register_for_event(event_id: int, profile_id: str):
+
+    BOOST = 0.15
+    DECAY = 0.05
+    SIM_THRESHOLD = 0.5
+    MAX_WEIGHT = 3.0
+    MIN_WEIGHT = 0.1
+
+    profile_tags = supabaseDB.table("profile_tags") \
+        .select("tag_name, weight") \
+        .eq("profile_id", profile_id) \
+        .execute().data
+    
+    event_tags = supabaseDB.table("event_tags") \
+        .select("tag_name") \
+        .eq("event_id", event_id) \
+        .execute().data
+
+    if not profile_tags or not event_tags:
+        return {"status": "no-op"}
+
+    for p in profile_tags:
+     #compute similarities
+        list_sim = [similarity(p["tag_name"], e["tag_name"]) for e in event_tags]
+        list_sim.sort(reverse=True)
+
+        local_boost = BOOST
+        local_decay = DECAY
+
+        for sim in list_sim:
+            if sim >= SIM_THRESHOLD:
+                p["weight"] = min(MAX_WEIGHT, p["weight"] + local_boost * sim)
+                local_boost *= 0.9
+            else:
+                p["weight"] = max(MIN_WEIGHT, p["weight"] - local_decay * (1 - sim))
+                local_decay *= 1.1
+
+        #print(f"Updated weight for tag '{p['tag_name']}': {p['weight']:.4f}")
+        #update DB for this profile tag
+        supabaseDB.table("profile_tags") \
+           .update({"weight": p["weight"]}) \
+            .eq("profile_id", profile_id) \
+            .eq("tag_name", p["tag_name"]) \
+            .execute()
+
+    return {"status": "updated"}
