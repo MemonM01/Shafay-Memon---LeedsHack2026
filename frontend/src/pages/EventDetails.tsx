@@ -208,7 +208,7 @@ export default function EventDetails() {
 
                 <button
                     onClick={() => navigate(-1)}
-                    className="absolute top-6 left-6 p-3 bg-black/50 backdrop-blur-md rounded-full hover:bg-white/20 transition-all text-white border border-white/10 z-50 cursor-pointer"
+                    className="absolute top-3 left-6 p-3 bg-black/50 backdrop-blur-md rounded-full hover:bg-white/20 transition-all text-white border border-white/10 z-20 cursor-pointer"
                 >
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
