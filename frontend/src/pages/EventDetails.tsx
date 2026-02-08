@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import type { Event } from '../types/Events';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../context/Userauth';
+import EventChat from '../components/EventChat';
 
 export default function EventDetails() {
     const { id } = useParams<{ id: string }>();
@@ -241,7 +242,7 @@ export default function EventDetails() {
                         <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
                             Additional Info
                         </h2>
-                        <p className="text-zinc-400">
+                        <div className="text-zinc-400">
                             {event.tags && event.tags.length > 0 ? (
                                 <div className="flex flex-wrap gap-2">
                                     {event.tags.map(tag => (
@@ -249,7 +250,20 @@ export default function EventDetails() {
                                     ))}
                                 </div>
                             ) : 'No additional tags.'}
-                        </p>
+                        </div>
+                    </div>
+
+                    {/* Real-time Chat Section */}
+                    <div className="mt-4">
+                        <h2 className="text-2xl font-black tracking-tighter mb-6 flex items-center gap-3">
+                            <span className="p-2 bg-blue-600 rounded-xl shadow-lg">
+                                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                </svg>
+                            </span>
+                            Live Conversation
+                        </h2>
+                        {id && <EventChat eventId={id} />}
                     </div>
                 </div>
 

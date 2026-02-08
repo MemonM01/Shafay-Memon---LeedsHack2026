@@ -18,6 +18,7 @@ L.Icon.Default.mergeOptions({
 
 import type { Event } from '../types/Events';
 import EventCard from './EventCard';
+import { MILE_TO_METERS, DEFAULT_SEARCH_RADIUS_MILES } from '../lib/geoUtils';
 
 type MapProps = {
     center: [number, number]
@@ -29,7 +30,6 @@ type MapProps = {
     pendingLocation?: [number, number] | null
 }
 
-const MILE_TO_METERS = 1609.34;
 
 const LocationSelector = ({ isSelectingLocation, onLocationSelect }: { isSelectingLocation?: boolean, onLocationSelect?: (lat: number, lng: number) => void }) => {
     useMapEvents({
@@ -98,7 +98,7 @@ const Map = ({ center, events, userLocation, activeEvent, isSelectingLocation, o
 
             <MapController activeEvent={activeEvent} />
             <LocationSelector isSelectingLocation={isSelectingLocation} onLocationSelect={onLocationSelect} />
-
+            <Circle center={center} radius={MILE_TO_METERS * DEFAULT_SEARCH_RADIUS_MILES} color="#3b82f6" fillColor="#3b82f6" fillOpacity={0.1} />
             {userLocation && (
                 <>
 

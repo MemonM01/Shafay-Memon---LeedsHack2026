@@ -17,7 +17,7 @@ const EventsContext = createContext<EventsContextType | undefined>(undefined);
 export function EventsProvider({ children }: { children: ReactNode }) {
     const [events, setEvents] = useState<Event[]>([]);
     const [loading, setLoading] = useState(false);
-    const [radius, setRadius] = useState(10); // Default 10km radius
+    const [radius, setRadius] = useState(500); // 500km to fetch events from a wide area
     const userLocation = useUserLocation();
 
     const fetchEvents = async () => {
@@ -25,7 +25,7 @@ export function EventsProvider({ children }: { children: ReactNode }) {
         setLoading(true);
 
         try {
-            // Convert km to meters for the RPC function
+            // Convert km to meters for the RPC function - fetch from wide area
             const radiusMeters = radius * 1000;
 
             const { data, error } = await supabase.rpc('get_events_with_interest', {
@@ -33,6 +33,7 @@ export function EventsProvider({ children }: { children: ReactNode }) {
                 lng: userLocation[1],
                 radius_meters: radiusMeters
             });
+
 
             if (error) {
                 console.error('Error fetching events:', error);
