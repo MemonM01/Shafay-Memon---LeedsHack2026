@@ -23,9 +23,9 @@ function App() {
   return (
     <Router>
       <EventsProvider>
-        <div className="min-h-screen flex flex-col">
+        <div className="h-screen flex flex-col">
           <Navbar />
-          <div className="flex-1 pt-[57px]">
+          <div className="flex-1 min-h-0">
             <Routes>
               <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
               <Route path="/register" element={user ? <Navigate to="/" replace /> : <Register />} />
