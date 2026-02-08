@@ -3,6 +3,9 @@ import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../context/Userauth";
 import EventCard from "../components/EventCard";
 import type { Event as AppEvent } from "../types/Events";
+import Modal from "../components/Modal";
+import CreateEventForm from "../components/CreateEventForm";
+import { useEvents } from "../context/EventsContext";
 
 type Tab = "going" | "hosted";
 
@@ -42,98 +45,73 @@ function toAppEvent(e: EventRow): AppEvent {
       e.image_url ??
       "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=800&q=80",
     ownerProfilePictureUrl: e.owner_profile_picture_url ?? undefined,
-    tags: [], // you can load event_tags later if you want
+    tags: [],
+    owner_id: e.owner_id
   };
 }
 
 export default function MyEvents() {
   const { user } = useAuth();
+  const { fetchEvents: refreshGlobalEvents } = useEvents();
   const [tab, setTab] = useState<Tab>("going");
   const [going, setGoing] = useState<EventRow[]>([]);
   const [hosted, setHosted] = useState<EventRow[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let alive = true;
+  // Edit state
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<AppEvent | null>(null);
 
-    async function load() {
-      if (!user) return;
+  const handleEditClick = (event: AppEvent) => {
+    setEditingEvent(event);
+    setIsModalOpen(true);
+  };
 
-      setLoading(true);
+  const load = async () => {
+    if (!user) return;
+    setLoading(true);
 
+    try {
       const { data: goingData, error: goingError } = await supabase
         .from("event_attendees")
-        .select(
-          `
+        .select(`
           joined_event_time,
           events:events (
-            id,
-            owner_id,
-            name,
-            description,
-            latitude,
-            longitude,
-            timestamp,
-            location,
-            image_url
+            id, owner_id, name, description, latitude, longitude, timestamp, location, image_url
           )
-        `
-        )
+        `)
         .eq("profile_id", user.id)
         .order("joined_event_time", { ascending: false });
 
       const { data: hostedData, error: hostedError } = await supabase
         .from("events")
-        .select(
-          `
-          id,
-          owner_id,
-          name,
-          description,
-          latitude,
-          longitude,
-          timestamp,
-          location,
-          image_url
-        `
-        )
+        .select("id, owner_id, name, description, latitude, longitude, timestamp, location, image_url")
         .eq("owner_id", user.id)
         .order("timestamp", { ascending: false });
-
-      if (!alive) return;
 
       if (goingError) console.error("goingError", goingError);
       if (hostedError) console.error("hostedError", hostedError);
 
       const allOwnerIds = Array.from(
-        new Set(
-          [
-            ...(goingData as AttendeeRow[] | null)?.map((r) => r.events?.owner_id).filter(Boolean) ?? [],
-            ...(hostedData as EventRow[] | null)?.map((r) => r.owner_id).filter(Boolean) ?? [],
-          ] as string[]
-        )
+        new Set([
+          ...(goingData as any)?.map((r: any) => r.events?.owner_id).filter(Boolean) ?? [],
+          ...(hostedData as any)?.map((r: any) => r.owner_id).filter(Boolean) ?? [],
+        ] as string[])
       );
 
       const avatarMap = new Map<string, string>();
       if (allOwnerIds.length > 0) {
-        const { data: profiles, error: profilesError } = await supabase
+        const { data: profiles } = await supabase
           .from("profiles")
           .select("id, profile_picture_url")
           .in("id", allOwnerIds);
 
-        if (profilesError) console.error("profilesError", profilesError);
-
-        (profiles || []).forEach((p: any) => {
-          if (p?.id && p?.profile_picture_url) {
-            avatarMap.set(p.id, p.profile_picture_url);
-          }
+        profiles?.forEach((p: any) => {
+          if (p?.profile_picture_url) avatarMap.set(p.id, p.profile_picture_url);
         });
       }
 
-      const goingEvents =
-        (goingData as AttendeeRow[] | null)?.map((r) => r.events).filter(Boolean) as
-        | EventRow[]
-        | undefined;
+      const goingEvents = (goingData as any)?.map((r: any) => r.events).filter(Boolean);
 
       const attachAvatar = (rows: EventRow[]) =>
         rows.map((row) => ({
@@ -142,16 +120,69 @@ export default function MyEvents() {
         }));
 
       setGoing(attachAvatar(goingEvents ?? []));
-      setHosted(attachAvatar((hostedData as EventRow[] | null) ?? []));
-
+      setHosted(attachAvatar((hostedData as any) ?? []));
+    } catch (err) {
+      console.error(err);
+    } finally {
       setLoading(false);
     }
+  };
 
+  useEffect(() => {
     load();
-    return () => {
-      alive = false;
-    };
   }, [user]);
+
+  const handleFormSubmit = async (data: any) => {
+    if (!user || !editingEvent) return;
+
+    try {
+      let imageUrl = data.image;
+      if (data.imageFile) {
+        const fileExt = data.imageFile.name.split('.').pop();
+        const fileName = `${Date.now()}.${fileExt}`;
+        const filePath = `${user.id}/${fileName}`;
+        const { error: uploadError } = await supabase.storage.from('event-images').upload(filePath, data.imageFile, { upsert: true });
+        if (uploadError) throw uploadError;
+        const { data: { publicUrl } } = supabase.storage.from('event-images').getPublicUrl(filePath);
+        imageUrl = publicUrl;
+      }
+
+      const timestamp = new Date(`${data.date}T${data.time}:00`).toISOString();
+
+      const { error: dbError } = await supabase
+        .from('events')
+        .update({
+          name: data.title,
+          description: data.description,
+          longitude: data.position[1],
+          latitude: data.position[0],
+          timestamp: timestamp,
+          location: data.location,
+          image_url: imageUrl,
+        })
+        .eq('id', editingEvent.id);
+
+      if (dbError) throw dbError;
+
+      // Sync tags
+      await supabase.from('event_tags').delete().eq('event_id', editingEvent.id);
+      if (data.tags && data.tags.length > 0) {
+        const tagsToInsert = data.tags.map((tag: string) => ({
+          event_id: editingEvent.id,
+          tag_name: tag.toLowerCase().trim()
+        }));
+        await supabase.from('event_tags').insert(tagsToInsert);
+      }
+
+      alert('Event updated successfully!');
+      setIsModalOpen(false);
+      setEditingEvent(null);
+      load(); // Refresh local list
+      refreshGlobalEvents(); // Refresh global context
+    } catch (error: any) {
+      alert(`Failed to update event: ${error.message}`);
+    }
+  };
 
   const list = useMemo(() => (tab === "going" ? going : hosted), [tab, going, hosted]);
 
@@ -172,16 +203,14 @@ export default function MyEvents() {
         <div className="flex gap-2 rounded-xl bg-white/10 p-1">
           <button
             onClick={() => setTab("going")}
-            className={`px-3 py-1.5 rounded-lg text-sm cursor-pointer ${tab === "going" ? "bg-white text-black" : "text-white/80"
-              }`}
+            className={`px-3 py-1.5 rounded-lg text-sm cursor-pointer ${tab === "going" ? "bg-white text-black" : "text-white/80"}`}
           >
             Going ({going.length})
           </button>
 
           <button
             onClick={() => setTab("hosted")}
-            className={`px-3 py-1.5 rounded-lg text-sm cursor-pointer ${tab === "hosted" ? "bg-white text-black" : "text-white/80"
-              }`}
+            className={`px-3 py-1.5 rounded-lg text-sm cursor-pointer ${tab === "hosted" ? "bg-white text-black" : "text-white/80"}`}
           >
             Hosted ({hosted.length})
           </button>
@@ -196,7 +225,6 @@ export default function MyEvents() {
         <div className="mt-6 grid gap-4">
           {list.map((e) => {
             const appEvent = toAppEvent(e);
-
             return (
               <div key={appEvent.id} className="relative">
                 {tab === "hosted" && (
@@ -204,13 +232,29 @@ export default function MyEvents() {
                     HOSTED BY YOU
                   </span>
                 )}
-
-                <EventCard event={appEvent} />
+                <EventCard event={appEvent} onEdit={handleEditClick} />
               </div>
             );
           })}
         </div>
       )}
+
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingEvent(null);
+        }}
+        title="Edit Event"
+        size="lg"
+      >
+        <CreateEventForm
+          initialData={editingEvent}
+          onSubmit={handleFormSubmit}
+          onSelectLocation={() => alert("Please use the main map to pick a new location for precision.")}
+          isEditing={true}
+        />
+      </Modal>
     </div>
   );
 }

@@ -5,9 +5,10 @@ interface CreateEventFormProps {
     onSubmit: (data: any) => void;
     onSelectLocation: (currentData: any) => void;
     locationName?: string;
+    isEditing?: boolean;
 }
 
-const CreateEventForm: React.FC<CreateEventFormProps> = ({ initialData, onSubmit, onSelectLocation, locationName }) => {
+const CreateEventForm: React.FC<CreateEventFormProps> = ({ initialData, onSubmit, onSelectLocation, locationName, isEditing }) => {
     const [title, setTitle] = useState(initialData?.title || '');
     const [description, setDescription] = useState(initialData?.description || '');
     const [date, setDate] = useState(initialData?.date || '');
@@ -257,7 +258,7 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({ initialData, onSubmit
                 type="submit"
                 className="w-full bg-linear-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 text-white font-bold py-3 px-4 rounded-xl shadow-lg transform transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
-                Create Event
+                {isEditing ? 'Update Event' : 'Create Event'}
             </button>
         </form>
     );
