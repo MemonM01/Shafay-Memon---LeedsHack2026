@@ -20,7 +20,7 @@ type EventSettingsProps = {
     onClose?: () => void;
 };
 
-export default function EventSettings({ events, onFilterChange, isOpen, onClose }: EventSettingsProps) {
+export default function EventSettings({ events, onFilterChange, onClose }: EventSettingsProps) {
     const [searchText, setSearchText] = useState('');
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
     const [tagInput, setTagInput] = useState('');
