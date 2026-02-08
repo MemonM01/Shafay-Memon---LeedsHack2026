@@ -55,15 +55,13 @@ def get_recommended_events(profile_id: str):
             for j, e_tag in enumerate(event_tag_list):
                 score = cosine_scores[i][j].item()
                 tag_sim_map[(p_tag, e_tag)] = score
-                if score >= 0.4:
-                    print(f"DEBUG: Match found: {p_tag} <-> {e_tag} = {score:.4f}")
     except Exception as e:
         print(f"Embedding error: {e}")
         return {"events": [], "error": str(e)}
 
     # 4. Score events
     recommended = []
-    threshold = 0.4 # Threshold for a "match"
+    threshold = 0.35 # Lowered for better discovery
 
     for event in events:
         e_tags = event_to_tags.get(event["id"], [])
@@ -91,9 +89,11 @@ def get_recommended_events(profile_id: str):
             event_copy["score"] = total_score / matches
             event_copy["tags"] = e_tags
             recommended.append(event_copy)
+            print(f"DEBUG: Recommended event: {event['name']} with score {event_copy['score']:.4f}")
     
     # Sort by score descending
     recommended.sort(key=lambda x: x["score"], reverse=True)
+    print(f"DEBUG: Returning {len(recommended)} recommendations")
     return {"events": recommended[:10]}
 
 @router.post("/{event_id}/register/{profile_id}")

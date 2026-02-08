@@ -41,7 +41,7 @@ export default function EventDetails() {
                 const tags = eventData.event_tags
                     ? eventData.event_tags.map((t: any) => t.tag_name)
                     : [];
-                
+
                 // Fetch owner profile picture and username
                 let ownerProfilePictureUrl: string | undefined;
                 let ownerName: string | null = null;
@@ -51,7 +51,7 @@ export default function EventDetails() {
                         .select('profile_picture_url, username')
                         .eq('id', eventData.owner_id)
                         .single();
-                    
+
                     ownerProfilePictureUrl = profileData?.profile_picture_url;
                     ownerName = profileData?.username || null;
                 }
@@ -182,6 +182,16 @@ export default function EventDetails() {
                     });
 
                 if (error) throw error;
+
+                // Update AI weights via backend
+                try {
+                    fetch(`http://localhost:8001/events/${id}/register/${user.id}`, {
+                        method: 'POST'
+                    }).catch(err => console.error("AI weight update failed:", err));
+                } catch (e) {
+                    console.error("AI weight update trigger failed:", e);
+                }
+
                 setInterestCount(prev => prev + 1);
                 setIsInterested(true);
             }

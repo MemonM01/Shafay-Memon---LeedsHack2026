@@ -1,7 +1,7 @@
 import { MapContainer, TileLayer, Marker, Popup, Circle, useMap, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 
 // Fix for default marker icon missing in Leaflet with React
 // ... (imports remain)
@@ -128,6 +128,17 @@ const MapController = ({ activeEvent }: { activeEvent?: Event | null }) => {
 }
 
 const Map = ({ center, events, userLocation, activeEvent, isSelectingLocation, onLocationSelect, pendingLocation, onEdit }: MapProps) => {
+    const uniqueEvents = useMemo(() => {
+        const m = new window.Map<string, Event>();
+        events.forEach(e => {
+            const existing = m.get(e.id);
+            if (!existing || (e.score !== undefined && existing.score === undefined)) {
+                m.set(e.id, e);
+            }
+        });
+        return Array.from(m.values());
+    }, [events]);
+
     return (
         <MapContainer center={center} zoom={13} scrollWheelZoom={true} className={`h-full w-full ${isSelectingLocation ? 'cursor-crosshair' : ''}`}>
             <TileLayer
@@ -171,7 +182,7 @@ const Map = ({ center, events, userLocation, activeEvent, isSelectingLocation, o
                     </Popup>
                 </Marker>
             )}
-            {events.map((event) => (
+            {uniqueEvents.map((event) => (
                 <EventMarker
                     key={event.id}
                     event={event}
