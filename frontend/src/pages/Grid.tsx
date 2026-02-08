@@ -6,9 +6,8 @@ import type { Event } from "../types/Events";
 
 export default function Grid() {
   // Consume context instead of static events
-  const { events, loading, radius, setRadius } = useEvents();
+  const { events, loading } = useEvents();
   const [filteredEvents, setFilteredEvents] = useState<Event[]>(events);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   // Sync filtered events when context events change
   useEffect(() => {
@@ -17,30 +16,11 @@ export default function Grid() {
 
   return (
     <div className="h-full w-full flex overflow-hidden bg-black relative">
-      {/* Hamburger Button - shows when sidebar is closed */}
-      {!isSidebarOpen && (
-        <button
-          onClick={() => setIsSidebarOpen(true)}
-          className="fixed left-4 top-4 z-50 p-3 bg-zinc-800 hover:bg-zinc-700 rounded-lg transition-colors text-zinc-300 hover:text-white border border-zinc-700 shadow-lg"
-          title="Open filters"
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
-      )}
-
       {/* Sidebar */}
-      <div
-        className={`h-full flex-shrink-0 flex flex-col border-r border-zinc-800 bg-zinc-950 transition-all duration-300 ease-in-out ${
-          isSidebarOpen ? 'w-96' : 'w-0 -ml-96'
-        }`}
-      >
+      <div className="h-full w-96 flex-shrink-0 flex flex-col border-r border-zinc-800 bg-zinc-950">
         <EventSettings 
           events={events} 
-          onFilterChange={setFilteredEvents} 
-          isOpen={isSidebarOpen}
-          onClose={() => setIsSidebarOpen(false)}
+          onFilterChange={setFilteredEvents}
         />
       </div>
 

@@ -1,6 +1,17 @@
+/// <reference types="@types/google.maps" />
 import { useState, useMemo, useEffect, useRef } from 'react';
 import type { Event } from '../types/Events';
 import { calculateDistance, DEFAULT_SEARCH_RADIUS_KM } from '../lib/geoUtils';
+import { setOptions, importLibrary } from '@googlemaps/js-api-loader';
+
+// Google Maps API Key - Replace with your own key or use environment variable
+const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'YOUR_API_KEY_HERE';
+
+// Set Google Maps API options
+setOptions({
+    key: GOOGLE_MAPS_API_KEY,
+    v: 'weekly'
+});
 
 
 // Debounce hook
@@ -16,11 +27,9 @@ function useDebounce<T>(value: T, delay: number): T {
 type EventSettingsProps = {
     events: Event[];
     onFilterChange?: (filteredEvents: Event[]) => void;
-    isOpen?: boolean;
-    onClose?: () => void;
 };
 
-export default function EventSettings({ events, onFilterChange, onClose }: EventSettingsProps) {
+export default function EventSettings({ events, onFilterChange }: EventSettingsProps) {
     const [searchText, setSearchText] = useState('');
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
     const [tagInput, setTagInput] = useState('');
@@ -30,11 +39,13 @@ export default function EventSettings({ events, onFilterChange, onClose }: Event
     const [locationCoords, setLocationCoords] = useState<[number, number] | null>(null);
     const [rangeKm, setRangeKm] = useState(Math.round(DEFAULT_SEARCH_RADIUS_KM)); // Default local range
     const [isLoadingLocation, setIsLoadingLocation] = useState(false);
-    const [suggestions, setSuggestions] = useState<any[]>([]);
+    const [suggestions, setSuggestions] = useState<google.maps.places.AutocompletePrediction[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
-    const [isMinimized, setIsMinimized] = useState(false);
     const [isSearching, setIsSearching] = useState(false);
     const locationWrapperRef = useRef<HTMLDivElement>(null);
+    const autocompleteServiceRef = useRef<google.maps.places.AutocompleteService | null>(null);
+    const geocoderRef = useRef<google.maps.Geocoder | null>(null);
+    const placesServiceRef = useRef<google.maps.places.PlacesService | null>(null);
 
     // Debounced search text for autocomplete
     const debouncedLocationAddress = useDebounce(locationAddress, 300);
@@ -92,21 +103,61 @@ export default function EventSettings({ events, onFilterChange, onClose }: Event
         onFilterChange?.(filteredEvents);
     }, [filteredEvents, onFilterChange]);
 
-    // Debounced autocomplete search
+    // Initialize Google Maps services
+    useEffect(() => {
+        const initGoogleMaps = async () => {
+            try {
+                // Import Places library
+                await importLibrary('places');
+                
+                autocompleteServiceRef.current = new google.maps.places.AutocompleteService();
+                geocoderRef.current = new google.maps.Geocoder();
+                // Create a dummy div for PlacesService (it requires a div)
+                const div = document.createElement('div');
+                placesServiceRef.current = new google.maps.places.PlacesService(div);
+                console.log('Google Maps services initialized');
+            } catch (error) {
+                console.error('Error loading Google Maps:', error);
+            }
+        };
+        
+        initGoogleMaps();
+    }, []);
+
+    // Debounced autocomplete search using Google Places API
     useEffect(() => {
         const fetchSuggestions = async () => {
-            if (debouncedLocationAddress.length > 2) {
+            if (debouncedLocationAddress.length > 2 && autocompleteServiceRef.current) {
+                console.log('Fetching suggestions for:', debouncedLocationAddress);
                 setIsSearching(true);
                 try {
-                    const response = await fetch(
-                        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(debouncedLocationAddress)}&limit=5&addressdetails=1`
+                    autocompleteServiceRef.current.getPlacePredictions(
+                        {
+                            input: debouncedLocationAddress,
+                            componentRestrictions: { country: 'uk' },
+                        },
+                        (predictions: google.maps.places.AutocompletePrediction[] | null, status: google.maps.places.PlacesServiceStatus) => {
+                            console.log('Autocomplete status:', status, 'Predictions:', predictions);
+                            setIsSearching(false);
+                            if (status === google.maps.places.PlacesServiceStatus.OK && predictions) {
+                                console.log('Setting suggestions:', predictions.length);
+                                setSuggestions(predictions);
+                                setShowSuggestions(true);
+                            } else if (status === google.maps.places.PlacesServiceStatus.REQUEST_DENIED) {
+                                console.error('Google Maps API request denied. Check your API key and billing.');
+                                setSuggestions([]);
+                                setShowSuggestions(false);
+                            } else {
+                                console.log('No suggestions found or other status:', status);
+                                setSuggestions([]);
+                                setShowSuggestions(false);
+                            }
+                        }
                     );
-                    const data = await response.json();
-                    setSuggestions(data);
-                    setShowSuggestions(true);
                 } catch (error) {
                     console.error('Autocomplete failed', error);
-                } finally {
+                    setSuggestions([]);
+                    setShowSuggestions(false);
                     setIsSearching(false);
                 }
             } else {
@@ -191,21 +242,32 @@ export default function EventSettings({ events, onFilterChange, onClose }: Event
                 ];
                 setLocationCoords(coords);
 
-                // Reverse geocode to get address
+                // Reverse geocode to get address using Google Maps Geocoding API
                 let addressName = `${coords[0].toFixed(4)}, ${coords[1].toFixed(4)}`;
-                try {
-                    const response = await fetch(
-                        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords[0]}&lon=${coords[1]}`
-                    );
-                    const data = await response.json();
-                    if (data.display_name) {
-                        addressName = data.display_name.split(',').slice(0, 3).join(',');
+                if (geocoderRef.current) {
+                    try {
+                        geocoderRef.current.geocode(
+                            { location: { lat: coords[0], lng: coords[1] } },
+                            (results: google.maps.GeocoderResult[] | null, status: google.maps.GeocoderStatus) => {
+                                if (status === 'OK' && results && results.length > 0) {
+                                    setLocationAddress(results[0].formatted_address);
+                                } else {
+                                    setLocationAddress(addressName);
+                                }
+                            }
+                        );
+                    } catch (e) {
+                        console.error('Failed to reverse geocode:', e);
+                        setLocationAddress(addressName);
                     }
-                } catch (e) {
-                    console.error('Failed to reverse geocode:', e);
+                } else {
+                    setLocationAddress(addressName);
                 }
 
-                setLocationAddress(addressName);
+                // Only set address if geocoder didn't (for the coordinates fallback)
+                if (!geocoderRef.current) {
+                    setLocationAddress(addressName);
+                }
                 setIsLoadingLocation(false);
             },
             (err) => {
@@ -235,8 +297,8 @@ export default function EventSettings({ events, onFilterChange, onClose }: Event
 
     const handleLocationSearch = async () => {
         const trimmedAddress = locationAddress.trim();
-        if (!trimmedAddress) {
-            console.log('No address to search');
+        if (!trimmedAddress || !geocoderRef.current) {
+            console.log('No address to search or geocoder not ready');
             return;
         }
 
@@ -244,30 +306,27 @@ export default function EventSettings({ events, onFilterChange, onClose }: Event
         console.log('Searching for location:', trimmedAddress);
 
         try {
-            const response = await fetch(
-                `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(trimmedAddress)}&limit=1`
+            geocoderRef.current.geocode(
+                { address: trimmedAddress },
+                (results: google.maps.GeocoderResult[] | null, status: google.maps.GeocoderStatus) => {
+                    if (status === 'OK' && results && results.length > 0) {
+                        const location = results[0].geometry.location;
+                        const coords: [number, number] = [location.lat(), location.lng()];
+                        setLocationCoords(coords);
+                        setLocationAddress(results[0].formatted_address);
+                        setShowSuggestions(false);
+                        console.log('Location set to:', coords);
+                    } else if (status === 'REQUEST_DENIED') {
+                        alert('Google Maps API request denied. Please check your API key and billing settings.');
+                    } else {
+                        alert('Location not found. Please try a different address.');
+                    }
+                    setIsLoadingLocation(false);
+                }
             );
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
-            console.log('Geocoding response:', data);
-
-            if (data.length > 0) {
-                const coords: [number, number] = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
-                setLocationCoords(coords);
-                setLocationAddress(data[0].display_name.split(',').slice(0, 3).join(','));
-                setShowSuggestions(false);
-                console.log('Location set to:', coords);
-            } else {
-                alert('Location not found. Please try a different address.');
-            }
         } catch (error) {
             console.error('Error geocoding address:', error);
             alert('Error finding location. Please try again.');
-        } finally {
             setIsLoadingLocation(false);
         }
     };
@@ -278,12 +337,45 @@ export default function EventSettings({ events, onFilterChange, onClose }: Event
         // This ensures the filter updates when they select a new suggestion
     };
 
-    const selectSuggestion = (suggestion: any) => {
-        const shortName = suggestion.display_name.split(',').slice(0, 3).join(',');
-        setLocationAddress(shortName);
-        setLocationCoords([parseFloat(suggestion.lat), parseFloat(suggestion.lon)]);
+    const selectSuggestion = async (suggestion: google.maps.places.AutocompletePrediction) => {
+        // Google Places API returns place_id, need to fetch details to get coordinates
+        setLocationAddress(suggestion.description);
         setShowSuggestions(false);
-        setSuggestions([]);
+        setIsLoadingLocation(true);
+
+        if (!placesServiceRef.current) {
+            console.error('Places service not initialized');
+            setIsLoadingLocation(false);
+            return;
+        }
+
+        try {
+            placesServiceRef.current.getDetails(
+                {
+                    placeId: suggestion.place_id,
+                    fields: ['geometry', 'formatted_address']
+                },
+                (place: google.maps.places.PlaceResult | null, status: google.maps.places.PlacesServiceStatus) => {
+                    if (status === google.maps.places.PlacesServiceStatus.OK && place && place.geometry?.location) {
+                        const coords: [number, number] = [
+                            place.geometry.location.lat(),
+                            place.geometry.location.lng()
+                        ];
+                        setLocationCoords(coords);
+                        setLocationAddress(place.formatted_address || suggestion.description);
+                        console.log('Location set to:', coords);
+                    } else {
+                        console.error('Failed to get place details:', status);
+                    }
+                    setSuggestions([]);
+                    setIsLoadingLocation(false);
+                }
+            );
+        } catch (error) {
+            console.error('Error fetching place details:', error);
+            setSuggestions([]);
+            setIsLoadingLocation(false);
+        }
     };
 
     const clearLocation = () => {
@@ -309,38 +401,13 @@ export default function EventSettings({ events, onFilterChange, onClose }: Event
     return (
         <div className="h-full w-full bg-zinc-950 border-r border-zinc-800 flex flex-col overflow-hidden">
             {/* Header */}
-            <div className="p-6 border-b border-zinc-800 flex-shrink-0 flex items-center justify-between">
-                <div>
-                    <h2 className="text-2xl font-black text-white uppercase tracking-tighter">
-                        Filters
-                    </h2>
-                    <p className="text-zinc-500 text-sm mt-1">
-                        Customize your search
-                    </p>
-                </div>
-                {onClose && (
-                    <button
-                        onClick={onClose}
-                        className="p-2 hover:bg-zinc-800 rounded-md text-zinc-500 hover:text-white transition-colors md:hidden"
-                        title="Close filters"
-                    >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                )}
-                {/* Desktop close button */}
-                {onClose && (
-                    <button
-                        onClick={onClose}
-                        className="hidden md:block p-2 hover:bg-zinc-800 rounded-md text-zinc-500 hover:text-white transition-colors"
-                        title="Close filters"
-                    >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
-                        </svg>
-                    </button>
-                )}
+            <div className="p-6 border-b border-zinc-800 flex-shrink-0">
+                <h2 className="text-2xl font-black text-white uppercase tracking-tighter">
+                    Filters
+                </h2>
+                <p className="text-zinc-500 text-sm mt-1">
+                    Customize your search
+                </p>
             </div>
 
             {/* Filters */}
@@ -402,12 +469,12 @@ export default function EventSettings({ events, onFilterChange, onClose }: Event
                                         )}
                                         {suggestions.map((suggestion, index) => (
                                             <li
-                                                key={index}
+                                                key={suggestion.place_id || index}
                                                 onClick={() => selectSuggestion(suggestion)}
                                                 className="px-3 py-2.5 hover:bg-sky-600/20 cursor-pointer text-sm text-zinc-300 border-b border-zinc-700/50 last:border-0 flex items-start gap-2"
                                             >
                                                 <span className="text-sky-400 mt-0.5">📍</span>
-                                                <span className="line-clamp-2">{suggestion.display_name}</span>
+                                                <span className="line-clamp-2">{suggestion.description}</span>
                                             </li>
                                         ))}
                                     </ul>
