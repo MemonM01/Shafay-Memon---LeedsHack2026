@@ -1,12 +1,17 @@
 import { Link } from 'react-router-dom';
 import type { Event } from '../types/Events';
+import { useAuth } from '../context/Userauth';
 
 type EventCardProps = {
   event: Event;
   onClick?: () => void;
+  onEdit?: (event: Event) => void;
 };
 
-export default function EventCard({ event, onClick }: EventCardProps) {
+export default function EventCard({ event, onClick, onEdit }: EventCardProps) {
+  const { user } = useAuth();
+  const isOwner = user && event.owner_id === user.id;
+
   const fallback = "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1200&q=80";
   const avatarFallback = "https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg";
   const date = new Date(event.date)
@@ -83,13 +88,26 @@ export default function EventCard({ event, onClick }: EventCardProps) {
             <span className="text-xs font-semibold">{event.time}</span>
           </div>
 
-          <Link
-            to={`/events/${event.id}`}
-            onClick={(e) => e.stopPropagation()}
-            className="rounded-lg bg-white px-4 py-2 text-xs font-bold uppercase tracking-wider text-black transition-all hover:bg-zinc-200 active:scale-95"
-          >
-            Details
-          </Link>
+          <div className="flex items-center gap-2">
+            {isOwner && onEdit && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(event);
+                }}
+                className="rounded-lg bg-zinc-800 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white transition-all hover:bg-zinc-700 active:scale-95 border border-zinc-700"
+              >
+                Edit
+              </button>
+            )}
+            <Link
+              to={`/events/${event.id}`}
+              onClick={(e) => e.stopPropagation()}
+              className="rounded-lg bg-white px-4 py-2 text-xs font-bold uppercase tracking-wider text-black transition-all hover:bg-zinc-200 active:scale-95"
+            >
+              Details
+            </Link>
+          </div>
         </div>
       </div>
     </div>

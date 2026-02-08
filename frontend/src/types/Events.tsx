@@ -11,4 +11,6 @@ export type Event = {
     tags?: string[]
     interestCount?: number
     isUserInterested?: boolean
+    score?: number
+    owner_id?: string
 }

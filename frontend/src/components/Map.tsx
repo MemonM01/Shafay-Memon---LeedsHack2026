@@ -28,6 +28,7 @@ type MapProps = {
     isSelectingLocation?: boolean
     onLocationSelect?: (lat: number, lng: number) => void
     pendingLocation?: [number, number] | null
+    onEdit?: (event: Event) => void
 }
 
 
@@ -50,13 +51,51 @@ const userIcon = L.divIcon({
     popupAnchor: [0, -30]
 });
 
+const suggestedIcon = (score: number = 0) => {
+    // scale between 1.0 and 2.5 based on score (0 to 1)
+    // This makes highly recommended events jump out!
+    const scale = 1.0 + (score * 1.5);
+
+    return L.divIcon({
+        className: '',
+        html: `
+            <div style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4)); animation: marker-pulse 2s infinite;">
+                <svg width="${30 * scale}" height="${42 * scale}" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 21C16 17.5 19 14.4087 19 11.2C19 7.22355 15.866 4 12 4C8.13401 4 5 7.22355 5 11.2C5 14.4087 8 17.5 12 21Z" fill="#ef4444" stroke="white" stroke-width="${1.5 / scale}"/>
+                    <circle cx="12" cy="11" r="3" fill="white"/>
+                </svg>
+            </div>
+        `,
+        iconSize: [30 * scale, 42 * scale],
+        iconAnchor: [(30 * scale) / 2, 42 * scale],
+        popupAnchor: [0, -42 * scale]
+    });
+};
+
+const localIcon = L.divIcon({
+    className: '',
+    html: `
+        <div style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
+            <svg width="30" height="42" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 21C16 17.5 19 14.4087 19 11.2C19 7.22355 15.866 4 12 4C8.13401 4 5 7.22355 5 11.2C5 14.4087 8 17.5 12 21Z" fill="#3b82f6" stroke="white" stroke-width="1.5"/>
+                <circle cx="12" cy="11" r="3" fill="white"/>
+            </svg>
+        </div>
+    `,
+    iconSize: [30, 42],
+    iconAnchor: [15, 42],
+    popupAnchor: [0, -40]
+});
+
 // Component to handle marker interactions requiring map instance
-const EventMarker = ({ event }: { event: Event }) => {
+const EventMarker = ({ event, onEdit }: { event: Event, onEdit?: (event: Event) => void }) => {
     const map = useMap();
+    const isSuggested = event.score !== undefined;
 
     return (
         <Marker
             position={event.position}
+            icon={isSuggested ? suggestedIcon(event.score) : localIcon}
             eventHandlers={{
                 click: () => {
                     map.flyTo(event.position, 16, {
@@ -67,7 +106,7 @@ const EventMarker = ({ event }: { event: Event }) => {
             }}
         >
             <Popup maxWidth={300} minWidth={300} className="m-0! p-0! bg-transparent shadow-none border-none">
-                <EventCard event={event} />
+                <EventCard event={event} onEdit={onEdit} />
             </Popup>
         </Marker>
     )
@@ -88,7 +127,7 @@ const MapController = ({ activeEvent }: { activeEvent?: Event | null }) => {
     return null;
 }
 
-const Map = ({ center, events, userLocation, activeEvent, isSelectingLocation, onLocationSelect, pendingLocation }: MapProps) => {
+const Map = ({ center, events, userLocation, activeEvent, isSelectingLocation, onLocationSelect, pendingLocation, onEdit }: MapProps) => {
     return (
         <MapContainer center={center} zoom={13} scrollWheelZoom={true} className={`h-full w-full ${isSelectingLocation ? 'cursor-crosshair' : ''}`}>
             <TileLayer
@@ -136,6 +175,7 @@ const Map = ({ center, events, userLocation, activeEvent, isSelectingLocation, o
                 <EventMarker
                     key={event.id}
                     event={event}
+                    onEdit={onEdit}
                 />
             ))}
         </MapContainer>

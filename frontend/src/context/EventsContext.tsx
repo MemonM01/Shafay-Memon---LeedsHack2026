@@ -5,20 +5,75 @@ import useUserLocation from '../hooks/useUserLocation';
 
 interface EventsContextType {
     events: Event[];
+    suggestedEvents: Event[];
     loading: boolean;
+    suggestedLoading: boolean;
     radius: number; // in kilometers
     setRadius: (radius: number) => void;
     userLocation: [number, number] | null;
     fetchEvents: () => Promise<void>;
+    fetchSuggestedEvents: () => Promise<void>;
 }
 
 const EventsContext = createContext<EventsContextType | undefined>(undefined);
 
+import { useAuth } from './Userauth';
+
 export function EventsProvider({ children }: { children: ReactNode }) {
     const [events, setEvents] = useState<Event[]>([]);
+    const [suggestedEvents, setSuggestedEvents] = useState<Event[]>([]);
     const [loading, setLoading] = useState(false);
+    const [suggestedLoading, setSuggestedLoading] = useState(false);
     const [radius, setRadius] = useState(500); // 500km to fetch events from a wide area
     const userLocation = useUserLocation();
+    const { user } = useAuth();
+
+    const fetchSuggestedEvents = async () => {
+        if (!user) return;
+        setSuggestedLoading(true);
+        try {
+            const response = await fetch(`http://localhost:8001/events/recommended/${user.id}`);
+            const data = await response.json();
+
+            if (data.events) {
+                // Fetch avatars for suggested event owners too
+                const ownerIds = data.events.map((e: any) => e.owner_id);
+                const uniqueOwnerIds = Array.from(new Set(ownerIds.filter(Boolean))) as string[];
+
+                let avatarMap = new Map<string, string>();
+                if (uniqueOwnerIds.length > 0) {
+                    const { data: profiles } = await supabase
+                        .from('profiles')
+                        .select('id, profile_picture_url')
+                        .in('id', uniqueOwnerIds);
+
+                    profiles?.forEach((p: any) => {
+                        if (p.profile_picture_url) avatarMap.set(p.id, p.profile_picture_url);
+                    });
+                }
+
+                const mapped: Event[] = data.events.map((e: any) => ({
+                    id: String(e.id),
+                    title: e.name,
+                    description: e.description,
+                    location: e.location,
+                    date: new Date(e.timestamp).toISOString().split('T')[0],
+                    time: new Date(e.timestamp).toTimeString().substring(0, 5),
+                    image: e.image_url || 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=800&q=80',
+                    position: [e.latitude, e.longitude],
+                    ownerProfilePictureUrl: avatarMap.get(e.owner_id),
+                    tags: e.tags || [],
+                    score: e.score,
+                    owner_id: e.owner_id
+                }));
+                setSuggestedEvents(mapped);
+            }
+        } catch (err) {
+            console.error('Failed to fetch suggested events', err);
+        } finally {
+            setSuggestedLoading(false);
+        }
+    };
 
     const fetchEvents = async () => {
         if (!userLocation) return;
@@ -122,8 +177,23 @@ export function EventsProvider({ children }: { children: ReactNode }) {
         fetchEvents();
     }, [userLocation, radius]); // Refetch when location or radius changes
 
+    useEffect(() => {
+        if (user) fetchSuggestedEvents();
+        else setSuggestedEvents([]);
+    }, [user]);
+
     return (
-        <EventsContext.Provider value={{ events, loading, radius, setRadius, userLocation, fetchEvents }}>
+        <EventsContext.Provider value={{
+            events,
+            suggestedEvents,
+            loading,
+            suggestedLoading,
+            radius,
+            setRadius,
+            userLocation,
+            fetchEvents,
+            fetchSuggestedEvents
+        }}>
             {children}
         </EventsContext.Provider>
     );
